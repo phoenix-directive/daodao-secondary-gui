@@ -1,22 +1,23 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Search, Star, Clock, ArrowRight } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { daoStorage, type DaoItem } from "@/lib/daoStorage";
+import { AddressLink } from '@/components/ui/address-link';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DaoAvatar } from '@/components/ui/dao-avatar';
+import { Input } from '@/components/ui/input';
+import {
+  favoriteDaos,
+  isFavorite,
+  recentDaos,
+  toggleFavorite,
+  type DaoItem,
+} from '@/lib/signals-instances';
+import { ArrowRight, Clock, Search, Star } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const [searchAddress, setSearchAddress] = useState("");
-  const [recentDaos, setRecentDaos] = useState<DaoItem[]>([]);
-  const [favoriteDaos, setFavoriteDaos] = useState<DaoItem[]>([]);
-
-  useEffect(() => {
-    setRecentDaos(daoStorage.getRecentDaos());
-    setFavoriteDaos(daoStorage.getFavoriteDaos());
-  }, []);
+  const [searchAddress, setSearchAddress] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,31 +27,37 @@ export function LandingPage() {
   };
 
   const DaoCard = ({ dao }: { dao: DaoItem }) => {
-    const isFavorite = daoStorage.isFavorite(dao.address);
+    const isCurrentlyFavorite = isFavorite(dao.address);
 
     const handleToggleFavorite = (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      daoStorage.toggleFavorite(dao);
-      setFavoriteDaos(daoStorage.getFavoriteDaos());
+      toggleFavorite(dao);
     };
 
     return (
-      <a href={`/dao/${dao.address}`}>
-        <Card className="group transition-all duration-300 hover:shadow-lg hover:border-primary/20">
-          <CardHeader className="pb-3">
+      <Link to={`/dao/${dao.address}`}>
+        <Card className="group transition-all duration-300 hover:shadow-lg hover:border-primary/20 overflow-hidden">
+          <CardHeader className="gap-0">
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-bold text-white">
-                  {dao.name.substring(0, 2).toUpperCase()}
-                </div>
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <DaoAvatar
+                  name={dao.name}
+                  imageUrl={dao.imageUrl}
+                  size="small"
+                  className="shrink-0"
+                />
                 <div className="min-w-0 flex-1">
-                  <CardTitle className="text-base group-hover:text-primary transition-colors">
+                  <CardTitle className="text-base  transition-colors truncate">
                     {dao.name}
                   </CardTitle>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {dao.address}
-                  </p>
+                  <div className="mt-1 min-w-0">
+                    <AddressLink
+                      address={dao.address}
+                      className="text-xs text-muted-foreground hover:text-muted-foreground/80"
+                      short={true}
+                    />
+                  </div>
                 </div>
               </div>
               <Button
@@ -61,16 +68,16 @@ export function LandingPage() {
               >
                 <Star
                   className={`h-4 w-4 ${
-                    isFavorite
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-muted-foreground"
+                    isCurrentlyFavorite
+                      ? 'fill-yellow-400 text-yellow-400'
+                      : 'text-muted-foreground'
                   }`}
                 />
               </Button>
             </div>
           </CardHeader>
         </Card>
-      </a>
+      </Link>
     );
   };
 
@@ -80,7 +87,7 @@ export function LandingPage() {
         {/* Hero Section */}
         <div className="mb-12 text-center">
           <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#B32712] via-[#E24A17] to-[#FF8A1E] bg-clip-text text-transparent">
               Explore DAOs
             </span>
           </h1>
@@ -122,15 +129,15 @@ export function LandingPage() {
             <div className="mb-6 flex items-center gap-2">
               <Clock className="h-5 w-5 text-blue-600" />
               <h2 className="text-2xl font-bold">Recently Viewed</h2>
-              {recentDaos.length > 0 && (
+              {recentDaos.value.length > 0 && (
                 <Badge variant="secondary" className="ml-auto">
-                  {recentDaos.length}
+                  {recentDaos.value.length}
                 </Badge>
               )}
             </div>
-            {recentDaos.length > 0 ? (
+            {recentDaos.value.length > 0 ? (
               <div className="grid gap-4">
-                {recentDaos.map((dao) => (
+                {recentDaos.value.map((dao) => (
                   <DaoCard key={dao.address} dao={dao} />
                 ))}
               </div>
@@ -151,15 +158,15 @@ export function LandingPage() {
             <div className="mb-6 flex items-center gap-2">
               <Star className="h-5 w-5 text-yellow-500" />
               <h2 className="text-2xl font-bold">Favorites</h2>
-              {favoriteDaos.length > 0 && (
+              {favoriteDaos.value.length > 0 && (
                 <Badge variant="secondary" className="ml-auto">
-                  {favoriteDaos.length}
+                  {favoriteDaos.value.length}
                 </Badge>
               )}
             </div>
-            {favoriteDaos.length > 0 ? (
+            {favoriteDaos.value.length > 0 ? (
               <div className="grid gap-4">
-                {favoriteDaos.map((dao) => (
+                {favoriteDaos.value.map((dao) => (
                   <DaoCard key={dao.address} dao={dao} />
                 ))}
               </div>
@@ -168,8 +175,8 @@ export function LandingPage() {
                 <CardContent className="flex min-h-50 flex-col items-center justify-center p-8 text-center">
                   <Star className="mb-4 h-12 w-12 text-muted-foreground/50" />
                   <p className="text-muted-foreground">
-                    No favorite DAOs yet. Click the star icon on any DAO to add
-                    it to your favorites.
+                    No favorite DAOs yet. Click the star icon on any DAO to add it to your
+                    favorites.
                   </p>
                 </CardContent>
               </Card>
