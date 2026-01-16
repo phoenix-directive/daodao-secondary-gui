@@ -1,4 +1,19 @@
-import { ArrowRightLeft, Coins, FileText, LucideIcon, Send, Settings, Wallet } from 'lucide-react';
+import {
+  ArrowRightLeft,
+  Coins,
+  Coins as CoinsIcon,
+  FileText,
+  LucideIcon,
+  Send,
+  Settings,
+  Wallet,
+} from 'lucide-react';
+
+export enum ActionCategory {
+  TREASURY = 'treasury',
+  GOVERNANCE = 'governance',
+  CUSTOM = 'custom',
+}
 
 export interface ActionTemplate {
   id: string;
@@ -6,7 +21,7 @@ export interface ActionTemplate {
   title: string;
   description: string;
   icon: LucideIcon;
-  category: 'treasury' | 'governance' | 'custom';
+  category: ActionCategory;
   defaultData: any;
 }
 
@@ -17,17 +32,41 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
     title: 'Send Tokens',
     description: 'Transfer native tokens to an address',
     icon: Send,
-    category: 'treasury',
+    category: ActionCategory.TREASURY,
     defaultData: {
-      '@type': '/cosmos.bank.v1beta1.MsgSend',
-      from_address: '',
-      to_address: '',
-      amount: [
-        {
-          denom: 'uluna',
-          amount: '0',
+      bank: {
+        send: {
+          to_address: '',
+          amount: [
+            {
+              denom: 'uluna',
+              amount: '0',
+            },
+          ],
         },
-      ],
+      },
+    },
+  },
+  {
+    id: 'cw20_send',
+    name: 'Send CW20 Tokens',
+    title: 'Send CW20 Tokens',
+    description: 'Transfer CW20 tokens to an address',
+    icon: CoinsIcon,
+    category: ActionCategory.TREASURY,
+    defaultData: {
+      wasm: {
+        execute: {
+          contract_addr: '',
+          funds: [],
+          msg: {
+            transfer: {
+              recipient: '',
+              amount: '0',
+            },
+          },
+        },
+      },
     },
   },
   {
@@ -36,13 +75,15 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
     title: 'Execute Contract',
     description: 'Execute a smart contract message',
     icon: FileText,
-    category: 'custom',
+    category: ActionCategory.CUSTOM,
     defaultData: {
-      '@type': '/cosmwasm.wasm.v1.MsgExecuteContract',
-      sender: '',
-      contract: '',
-      msg: {},
-      funds: [],
+      wasm: {
+        execute: {
+          contract_addr: '',
+          funds: [],
+          msg: {},
+        },
+      },
     },
   },
   {
@@ -51,14 +92,18 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
     title: 'Delegate Stake',
     description: 'Delegate tokens to a validator',
     icon: Coins,
-    category: 'governance',
+    category: ActionCategory.GOVERNANCE,
     defaultData: {
-      '@type': '/cosmos.staking.v1beta1.MsgDelegate',
-      delegator_address: '',
-      validator_address: '',
-      amount: {
-        denom: 'uluna',
-        amount: '0',
+      stargate: {
+        typeUrl: '/cosmos.staking.v1beta1.MsgDelegate',
+        value: {
+          delegatorAddress: '',
+          validatorAddress: '',
+          amount: {
+            denom: 'uluna',
+            amount: '0',
+          },
+        },
       },
     },
   },
@@ -68,14 +113,18 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
     title: 'Undelegate Stake',
     description: 'Undelegate tokens from a validator',
     icon: ArrowRightLeft,
-    category: 'governance',
+    category: ActionCategory.GOVERNANCE,
     defaultData: {
-      '@type': '/cosmos.staking.v1beta1.MsgUndelegate',
-      delegator_address: '',
-      validator_address: '',
-      amount: {
-        denom: 'uluna',
-        amount: '0',
+      stargate: {
+        typeUrl: '/cosmos.staking.v1beta1.MsgUndelegate',
+        value: {
+          delegatorAddress: '',
+          validatorAddress: '',
+          amount: {
+            denom: 'uluna',
+            amount: '0',
+          },
+        },
       },
     },
   },
@@ -85,12 +134,14 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
     title: 'Vote on Governance Proposal',
     description: 'Vote on a chain governance proposal',
     icon: Settings,
-    category: 'governance',
+    category: ActionCategory.GOVERNANCE,
     defaultData: {
-      '@type': '/cosmos.gov.v1beta1.MsgVote',
-      proposal_id: '',
-      voter: '',
-      option: 'VOTE_OPTION_YES',
+      gov: {
+        vote: {
+          proposal_id: 0,
+          vote: 'yes',
+        },
+      },
     },
   },
   {
@@ -99,12 +150,14 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
     title: 'Update Contract Admin',
     description: 'Change the admin of a contract',
     icon: Wallet,
-    category: 'governance',
+    category: ActionCategory.GOVERNANCE,
     defaultData: {
-      '@type': '/cosmwasm.wasm.v1.MsgUpdateAdmin',
-      sender: '',
-      new_admin: '',
-      contract: '',
+      wasm: {
+        update_admin: {
+          contract_addr: '',
+          admin: '',
+        },
+      },
     },
   },
 ];
@@ -113,8 +166,6 @@ export function getTemplateById(id: string): ActionTemplate | undefined {
   return ACTION_TEMPLATES.find((t) => t.id === id);
 }
 
-export function getTemplatesByCategory(
-  category: 'treasury' | 'governance' | 'custom',
-): ActionTemplate[] {
+export function getTemplatesByCategory(category: ActionCategory): ActionTemplate[] {
   return ACTION_TEMPLATES.filter((t) => t.category === category);
 }

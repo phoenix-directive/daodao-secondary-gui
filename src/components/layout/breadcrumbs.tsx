@@ -12,12 +12,15 @@ export function Breadcrumbs() {
   const path = location.pathname;
 
   // Parse path manually since useParams doesn't work outside Routes
-  // Match patterns: /dao/:address or /dao/:address/:tab or /dao/:address/proposals/:proposalId
-  const daoMatch = path.match(/^\/dao\/([^\/]+)(?:\/proposals\/(\d+)|\/([^\/]+))?/);
+  // Match patterns: /dao/:address or /dao/:address/:tab or /dao/:address/proposals/:proposalId or /dao/:address/proposals/create
+  const daoMatch = path.match(
+    /^\/dao\/([^\/]+)(?:\/proposals\/(\d+)|\/proposals\/(create)|\/([^\/]+))?/,
+  );
 
   const address = daoMatch?.[1];
   const proposalId = daoMatch?.[2]; // from /dao/:address/proposals/:proposalId
-  const tab = daoMatch?.[3]; // from /dao/:address/:tab
+  const createPath = daoMatch?.[3]; // from /dao/:address/proposals/create
+  const tab = daoMatch?.[4]; // from /dao/:address/:tab
 
   const daoState = useDaoDaoState(address);
   const daoName = daoState.data.value?.config.name || address || 'DAO';
@@ -33,17 +36,31 @@ export function Breadcrumbs() {
     // DAO pages - check if path starts with /dao/
     if (path.startsWith('/dao/') && address) {
       const isProposalDetail = !!proposalId;
+      const isProposalCreate = !!createPath;
 
       // Add DAO breadcrumb (always linkable if we're deeper than the DAO page)
-      if (isProposalDetail) {
+      if (isProposalDetail || isProposalCreate) {
         items.push({
           label: daoName,
           href: `/dao/${address}`,
         });
-        // Add proposal breadcrumb
-        items.push({
-          label: `Proposal ${proposalId}`,
-        });
+
+        if (isProposalCreate) {
+          // Add proposals breadcrumb when on create page
+          items.push({
+            label: 'Proposals',
+            href: `/dao/${address}/proposals`,
+          });
+          // Add create breadcrumb
+          items.push({
+            label: 'Create Proposal',
+          });
+        } else {
+          // Add proposal detail breadcrumb
+          items.push({
+            label: `Proposal ${proposalId}`,
+          });
+        }
       } else if (tab) {
         items.push({
           label: daoName,

@@ -4,8 +4,7 @@
 
 export interface ProposalAction {
   id: string;
-  type: string;
-  data: any;
+  data: any; // The actual Cosmos message
 }
 
 export interface ProposalDraft {
@@ -14,6 +13,71 @@ export interface ProposalDraft {
   proposalType: 'single' | 'multiple';
   actions: ProposalAction[];
   lastModified: number;
+}
+
+// Message type detection
+export interface MessageTypeInfo {
+  type: string;
+  name: string;
+  icon?: string;
+}
+
+export function detectMessageType(data: any): MessageTypeInfo {
+  if (!data || typeof data !== 'object') {
+    return { type: 'unknown', name: 'Unknown Message' };
+  }
+
+  // Stargate messages
+  if (data.stargate?.typeUrl) {
+    const typeUrl = data.stargate.typeUrl;
+
+    if (typeUrl === '/cosmos.staking.v1beta1.MsgDelegate') {
+      return { type: 'staking_delegate', name: 'Delegate Stake' };
+    }
+    if (typeUrl === '/cosmos.staking.v1beta1.MsgUndelegate') {
+      return { type: 'staking_undelegate', name: 'Undelegate Stake' };
+    }
+    if (typeUrl === '/cosmos.staking.v1beta1.MsgBeginRedelegate') {
+      return { type: 'staking_redelegate', name: 'Redelegate Stake' };
+    }
+    if (typeUrl === '/cosmos.gov.v1beta1.MsgVote' || typeUrl === '/cosmos.gov.v1.MsgVote') {
+      return { type: 'gov_vote_stargate', name: 'Vote on Governance (Stargate)' };
+    }
+
+    // Generic stargate message
+    return { type: 'stargate', name: `Stargate: ${typeUrl.split('.').pop()?.replace('Msg', '')}` };
+  }
+
+  // Bank messages
+  if (data.bank?.send) {
+    return { type: 'bank_send', name: 'Send Tokens' };
+  }
+
+  // Governance messages
+  if (data.gov?.vote) {
+    return { type: 'gov_vote', name: 'Vote on Governance' };
+  }
+
+  // CosmWasm messages
+  if (data.wasm?.execute) {
+    // Check if it's a CW20 transfer
+    if (data.wasm.execute.msg?.transfer) {
+      return { type: 'cw20_send', name: 'Send CW20 Tokens' };
+    }
+    return { type: 'wasm_execute', name: 'Execute Contract' };
+  }
+  if (data.wasm?.instantiate) {
+    return { type: 'wasm_instantiate', name: 'Instantiate Contract' };
+  }
+  if (data.wasm?.migrate) {
+    return { type: 'wasm_migrate', name: 'Migrate Contract' };
+  }
+  if (data.wasm?.update_admin) {
+    return { type: 'update_admin', name: 'Update Contract Admin' };
+  }
+
+  // Unknown message type
+  return { type: 'unknown', name: 'Custom Message' };
 }
 
 const DRAFT_KEY_PREFIX = 'proposal_draft_';

@@ -3,13 +3,42 @@ import { AmountDisplay } from '@/components/ui/amount-display';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { JsonViewer } from '@/components/ui/json-viewer';
 import { Switch } from '@/components/ui/switch';
+import { fromBaseUnits } from '@/hooks';
 import { usePrices } from '@/hooks/usePrices';
 import { useTheme } from '@/lib/useTheme';
-import { ChevronDown, ChevronRight, Code2, FileText } from 'lucide-react';
+import { ChevronDown, ChevronRight, Code2, FileText, Send } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
+// Type guards for message types
+type BankSendMsg = {
+  bank: {
+    send: {
+      to_address: string;
+      amount: Array<{ denom: string; amount: string }>;
+    };
+  };
+};
+
+type WasmExecuteMsg = {
+  wasm: {
+    execute: {
+      contract_addr: string;
+      funds: any[];
+      msg: string;
+    };
+  };
+};
+
+interface MessageTypeInfo {
+  title: string;
+  subtitle?: string | ReactNode;
+  icon: any;
+  expandable: boolean;
+  data?: any;
+}
 
 interface ProposalMessageProps {
   message: any;
@@ -42,30 +71,69 @@ export function ProposalMessage({
 
   const syntaxTheme = theme === 'dark' ? oneDark : oneLight;
 
-  const getMessageType = () => {
-    if (message.wasm?.execute) {
-      let actionName = '';
+  // Type guard functions
+  const isBankSend = (data: any): data is BankSendMsg => {
+    return data?.bank?.send !== undefined;
+  };
 
-      // Try to decode the message and get the first key
+  const isWasmExecute = (data: any): data is WasmExecuteMsg => {
+    return data?.wasm?.execute !== undefined;
+  };
+
+  const getMessageType = (): MessageTypeInfo => {
+    // Bank Send
+    if (isBankSend(message)) {
+      const { to_address, amount } = message.bank.send;
+      const coin = amount[0];
+      if (!coin) {
+        return {
+          title: 'Bank Send',
+          icon: Send,
+          expandable: false,
+        };
+      }
+
+      const priceData = getPrice(coin.denom);
+      const displayAmount = priceData
+        ? fromBaseUnits(coin.amount, priceData.decimals)
+        : coin.amount;
+      const displayDenom = priceData?.display || coin.denom;
+
+      return {
+        title: 'Bank Send',
+        subtitle: (
+          <div className="flex gap-1">
+            {displayAmount} {displayDenom} to <AddressLink address={to_address} />
+          </div>
+        ),
+        icon: Send,
+        expandable: false,
+      };
+    }
+
+    // Wasm Execute
+    if (isWasmExecute(message)) {
+      let actionName = '';
+      let decodedMsg;
+
       try {
-        const { msg } = message.wasm.execute;
-        const decoded = atob(msg);
-        const decodedMsg = JSON.parse(decoded);
+        const decoded = atob(message.wasm.execute.msg);
+        decodedMsg = JSON.parse(decoded);
         const firstKey = Object.keys(decodedMsg)[0];
 
         if (firstKey) {
-          // Convert snake_case to Title Case
           actionName = toTitleCase(firstKey);
         }
       } catch (e) {
-        // Ignore errors, just don't show action name
+        // Ignore errors
       }
 
       return {
         title: 'Execute Smart Contract',
         subtitle: actionName,
         icon: Code2,
-        supported: true,
+        expandable: true,
+        data: { decodedMsg },
       };
     }
 
@@ -75,22 +143,23 @@ export function ProposalMessage({
       title: 'Raw Message',
       subtitle: firstKey,
       icon: FileText,
-      supported: false,
+      expandable: true,
     };
   };
 
   const messageType = getMessageType();
 
-  const renderWasmExecute = (wasmMsg: any) => {
+  const renderWasmExecute = (wasmMsg: any, decodedMsg?: any) => {
     const { contract_addr, msg, funds } = wasmMsg.execute || wasmMsg;
 
-    // Decode base64 message
-    let decodedMsg;
-    try {
-      const decoded = atob(msg);
-      decodedMsg = JSON.parse(decoded);
-    } catch (e) {
-      decodedMsg = { error: 'Failed to decode message', raw: msg };
+    // Decode base64 message if not already decoded
+    if (!decodedMsg) {
+      try {
+        const decoded = atob(msg);
+        decodedMsg = JSON.parse(decoded);
+      } catch (e) {
+        decodedMsg = { error: 'Failed to decode message', raw: msg };
+      }
     }
 
     // Check if this is an increase_allowance message
@@ -148,8 +217,8 @@ export function ProposalMessage({
 
   const renderParsed = () => {
     // Check if it's a wasm execute message
-    if (message.wasm?.execute) {
-      return renderWasmExecute(message.wasm);
+    if (isWasmExecute(message)) {
+      return renderWasmExecute(message.wasm, messageType.data?.decodedMsg);
     }
 
     // Fallback: show raw JSON for unsupported types
@@ -176,18 +245,15 @@ export function ProposalMessage({
   return (
     <Card className="p-0 gap-0">
       <CardHeader
-        className="cursor-pointer hover:bg-muted/50 transition-colors py-4"
-        onClick={handleToggleExpanded}
+        className={
+          messageType.expandable
+            ? 'cursor-pointer hover:bg-muted/50 transition-colors py-4'
+            : 'py-4'
+        }
+        onClick={messageType.expandable ? handleToggleExpanded : undefined}
       >
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="shrink-0">
-              {expanded ? (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              )}
-            </div>
             <div className="rounded-lg bg-primary/10 p-2 shrink-0">
               <MessageIcon className="h-5 w-5 text-primary" />
             </div>
@@ -196,31 +262,42 @@ export function ProposalMessage({
                 {showRaw ? 'Raw Message' : messageType.title}
               </CardTitle>
               {messageType.subtitle && (
-                <p className="text-sm text-muted-foreground truncate mt-0.5">
+                <div className="text-sm text-muted-foreground truncate mt-0.5">
                   {messageType.subtitle}
-                </p>
+                </div>
               )}
             </div>
           </div>
-          {messageType.supported && (
-            <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-              <span className="text-sm text-muted-foreground">Show Raw</span>
-              <Switch
-                checked={showRaw}
-                onCheckedChange={(checked) => {
-                  setShowRaw(checked);
-                  // Auto-expand when toggling to raw view
-                  if (checked && !expanded) {
-                    handleToggleExpanded();
-                  }
-                }}
-              />
-            </div>
-          )}
+          <div className="flex items-center gap-3 shrink-0">
+            {messageType.expandable && (
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <span className="text-sm text-muted-foreground">Show Raw</span>
+                <Switch
+                  checked={showRaw}
+                  onCheckedChange={(checked) => {
+                    setShowRaw(checked);
+                    // Auto-expand when toggling to raw view
+                    if (checked && !expanded) {
+                      handleToggleExpanded();
+                    }
+                  }}
+                />
+              </div>
+            )}
+            {messageType.expandable && (
+              <div className="shrink-0">
+                {expanded ? (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
       <AnimatePresence initial={false}>
-        {expanded && (
+        {expanded && messageType.expandable && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}

@@ -5,7 +5,8 @@ export const gradientText =
   'bg-linear-to-br from-[#B32712] via-[#E24A17] to-[#FF8A1E] dark:from-[#E24A17] dark:via-[#FF8A1E] dark:to-[#FFC83D] bg-clip-text text-transparent';
 
 export const gradientBg = 'bg-linear-to-tr from-[#E24A17] via-[#FF8A1E] to-[#FFC83D] ';
-export const gradientBgHover = 'bg-linear-to-tr hover:from-[#B32712] hover:via-[#E24A17] hover:to-[#FF9F2E] ';
+export const gradientBgHover =
+  'bg-linear-to-tr hover:from-[#B32712] hover:via-[#E24A17] hover:to-[#FF9F2E] ';
 
 // use tailwind classes, for dark red to yellow to green gradient background use tailwind classes
 export const redGreenGradientBg =

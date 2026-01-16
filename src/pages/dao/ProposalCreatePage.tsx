@@ -16,7 +16,8 @@ import {
   ProposalDraft,
   saveDraft,
 } from '@/lib/proposal-drafts';
-import { ArrowLeft, Eye, FileText, Library, Loader2, Plus } from 'lucide-react';
+import { ProposalFormProvider } from '@/lib/proposal-form-context';
+import { ArrowLeft, Eye, FileText, Library, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -51,7 +52,6 @@ export function ProposalCreatePage() {
   const addAction = (template?: ActionTemplate) => {
     const newAction: ProposalAction = {
       id: crypto.randomUUID(),
-      type: template?.name || 'Custom',
       data: template?.defaultData || {},
     };
     updateDraft({ actions: [...draft.actions, newAction] });
@@ -71,7 +71,7 @@ export function ProposalCreatePage() {
   const duplicateAction = (index: number) => {
     const actionToDuplicate = draft.actions[index];
     const newAction: ProposalAction = {
-      ...actionToDuplicate,
+      ...JSON.parse(JSON.stringify(actionToDuplicate)),
       id: crypto.randomUUID(),
     };
     const newActions = [...draft.actions];
@@ -127,27 +127,28 @@ export function ProposalCreatePage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          className="gap-2 mb-4"
-          onClick={() => navigate(`/dao/${daoAddress}/proposals`)}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Proposals
-        </Button>
-        <h1 className="text-3xl font-bold">Create Proposal</h1>
-        <p className="text-muted-foreground mt-2">Draft is automatically saved to your browser</p>
-      </div>
+    <ProposalFormProvider daoAddress={daoAddress || ''}>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            className="gap-2 mb-4"
+            onClick={() => navigate(`/dao/${daoAddress}/proposals`)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Proposals
+          </Button>
+          <h1 className="text-3xl font-bold">Create Proposal</h1>
+          <p className="text-muted-foreground mt-2">Draft is automatically saved to your browser</p>
+        </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="edit" className="gap-2">
-            <FileText className="h-4 w-4" />
-            Edit
-          </TabsTrigger>
-          <TabsTrigger value="preview" className="gap-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'edit' | 'preview')}>
+          <TabsList size="sm">
+            <TabsTrigger value="edit" className="gap-2" size="sm">
+              <FileText className="h-4 w-4" />
+              Edit
+            </TabsTrigger>
+            <TabsTrigger value="preview" className="gap-2" size="sm">
             <Eye className="h-4 w-4" />
             Preview
           </TabsTrigger>
@@ -222,54 +223,47 @@ export function ProposalCreatePage() {
           </Card>
 
           {/* Actions */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Actions ({draft.actions.length})</CardTitle>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => setIsLibraryOpen(true)}
-                  >
-                    <Library className="h-4 w-4" />
-                    Action Library
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2" onClick={() => addAction()}>
-                    <Plus className="h-4 w-4" />
-                    Add Custom Action
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {draft.actions.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Actions ({draft.actions.length})</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => setIsLibraryOpen(true)}
+              >
+                <Library className="h-4 w-4" />
+                Action Library
+              </Button>
+            </div>
+
+            {draft.actions.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-8 text-muted-foreground">
                   <p className="mb-4">No actions added yet</p>
                   <Button variant="outline" onClick={() => setIsLibraryOpen(true)}>
                     Browse Action Library
                   </Button>
-                </div>
-              ) : (
-                draft.actions.map((action, index) => (
-                  <ActionEditor
-                    key={action.id}
-                    action={action}
-                    index={index}
-                    total={draft.actions.length}
-                    onUpdate={(updated) => updateAction(index, updated)}
-                    onRemove={() => removeAction(index)}
-                    onDuplicate={() => duplicateAction(index)}
-                    onMoveUp={() => moveAction(index, 'up')}
-                    onMoveDown={() => moveAction(index, 'down')}
-                  />
-                ))
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            ) : (
+              draft.actions.map((action, index) => (
+                <ActionEditor
+                  key={action.id}
+                  action={action}
+                  index={index}
+                  total={draft.actions.length}
+                  onUpdate={(updated) => updateAction(index, updated)}
+                  onRemove={() => removeAction(index)}
+                  onDuplicate={() => duplicateAction(index)}
+                  onMoveUp={() => moveAction(index, 'up')}
+                  onMoveDown={() => moveAction(index, 'down')}
+                />
+              ))
+            )}
+          </div>
 
-          {/* Actions */}
+          {/* Publish Actions */}
           <div className="flex items-center justify-between">
             <Button variant="outline" onClick={handleClearDraft}>
               Clear Draft
@@ -314,6 +308,7 @@ export function ProposalCreatePage() {
         onOpenChange={setIsLibraryOpen}
         onSelectTemplate={(template) => addAction(template)}
       />
-    </div>
+      </div>
+    </ProposalFormProvider>
   );
 }
