@@ -19,28 +19,25 @@ interface MemberTableProps {
   decimals?: number;
 }
 
+function formatNumber(value: number, decimals: number) {
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(value);
+}
+
 export function MemberTable({ members, decimals = 6 }: MemberTableProps) {
   const formatVotingPower = (power: string) => {
     try {
-      // Convert from Uint128 string to readable format
-      const powerNum = BigInt(power);
-      const divisor = BigInt(10 ** decimals);
-      const wholePart = powerNum / divisor;
-      const fractionalPart = powerNum % divisor;
-
-      if (fractionalPart === BigInt(0)) {
-        return wholePart.toLocaleString();
+      if (!decimals) {
+        return power;
+      } else {
+        // return including full decimals so 10.000000
+        return formatNumber(
+          parseFloat((BigInt(power) / BigInt(10 ** decimals)).toString()),
+          decimals,
+        );
       }
-
-      // Format with decimals
-      const fractionalStr = fractionalPart.toString().padStart(decimals, '0');
-      const trimmedFractional = fractionalStr.replace(/0+$/, '');
-
-      if (trimmedFractional.length === 0) {
-        return wholePart.toLocaleString();
-      }
-
-      return `${wholePart.toLocaleString()}.${trimmedFractional}`;
     } catch (error) {
       console.error('Error formatting voting power:', error);
       return power;

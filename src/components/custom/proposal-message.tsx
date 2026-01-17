@@ -1,6 +1,6 @@
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
 import { actionRegistry } from '@/lib/action-types';
 import { useTheme } from '@/lib/useTheme';
 import { ChevronDown, ChevronRight, FileText, X } from 'lucide-react';

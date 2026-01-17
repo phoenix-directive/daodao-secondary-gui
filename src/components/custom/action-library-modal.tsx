@@ -19,6 +19,7 @@ interface ActionLibraryModalProps {
 const CATEGORIES = [
   { id: ActionCategory.TREASURY, name: 'Treasury' },
   { id: ActionCategory.GOVERNANCE, name: 'Governance' },
+  { id: ActionCategory.APPS, name: 'Apps' },
   { id: ActionCategory.CUSTOM, name: 'Custom' },
 ] as const;
 

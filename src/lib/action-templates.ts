@@ -1,7 +1,9 @@
+import ecosystemProjects from '@/config/ecosystemProjects.json';
 import {
   ArrowRightLeft,
   Coins,
   Coins as CoinsIcon,
+  ExternalLink,
   FileText,
   LucideIcon,
   Send,
@@ -13,6 +15,7 @@ export enum ActionCategory {
   TREASURY = 'treasury',
   GOVERNANCE = 'governance',
   CUSTOM = 'custom',
+  APPS = 'apps',
 }
 
 export interface ActionTemplate {
@@ -25,7 +28,7 @@ export interface ActionTemplate {
   defaultData: any;
 }
 
-export const ACTION_TEMPLATES: ActionTemplate[] = [
+const BASE_ACTION_TEMPLATES: ActionTemplate[] = [
   {
     id: 'bank_send',
     name: 'Send Tokens',
@@ -48,10 +51,34 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
     },
   },
   {
-    id: 'cw20_send',
-    name: 'Send CW20 Tokens',
-    title: 'Send CW20 Tokens',
+    id: 'cw20_transfer',
+    name: 'Transfer CW20',
+    title: 'Transfer CW20',
     description: 'Transfer CW20 tokens to an address',
+    icon: ArrowRightLeft,
+    category: ActionCategory.TREASURY,
+    defaultData: {
+      wasm: {
+        execute: {
+          contract_addr: '',
+          funds: [],
+          msg: btoa(
+            JSON.stringify({
+              transfer: {
+                recipient: '',
+                amount: '0',
+              },
+            }),
+          ),
+        },
+      },
+    },
+  },
+  {
+    id: 'cw20_send',
+    name: 'Send CW20',
+    title: 'Send CW20',
+    description: 'Send CW20 tokens to a contract with a message',
     icon: CoinsIcon,
     category: ActionCategory.TREASURY,
     defaultData: {
@@ -59,12 +86,15 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
         execute: {
           contract_addr: '',
           funds: [],
-          msg: {
-            transfer: {
-              recipient: '',
-              amount: '0',
-            },
-          },
+          msg: btoa(
+            JSON.stringify({
+              send: {
+                contract: '',
+                amount: '0',
+                msg: '',
+              },
+            }),
+          ),
         },
       },
     },
@@ -161,6 +191,30 @@ export const ACTION_TEMPLATES: ActionTemplate[] = [
     },
   },
 ];
+
+// Generate app templates from ecosystem projects
+const appTemplates: ActionTemplate[] = (ecosystemProjects as any[])
+  .filter(
+    (project) =>
+      project.app === true && project.link && !project.name.toLowerCase().includes('local'),
+  )
+  .map((project) => ({
+    id: `app_${project.name.toLowerCase().replace(/\s+/g, '_')}`,
+    name: project.name,
+    title: project.name,
+    description: project.description || 'Open app in fullscreen',
+    icon: ExternalLink,
+    category: ActionCategory.APPS,
+    defaultData: {
+      app: {
+        url: project.link,
+        name: project.name,
+      },
+    },
+  }));
+
+// Combine base templates with generated app templates
+export const ACTION_TEMPLATES = [...BASE_ACTION_TEMPLATES, ...appTemplates];
 
 export function getTemplateById(id: string): ActionTemplate | undefined {
   return ACTION_TEMPLATES.find((t) => t.id === id);

@@ -1,5 +1,6 @@
 import { ActionEditor } from '@/components/custom/action-editor';
 import { ActionLibraryModal } from '@/components/custom/action-library-modal';
+import { DappComponent } from '@/components/custom/apps';
 import { ProposalPreview } from '@/components/custom/proposal-preview';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UnifiedCosmosMsg } from '@/daodao/types/contracts';
 import { useDaoDaoState } from '@/hooks/useDaoDao';
-import { ActionTemplate } from '@/lib/action-templates';
+import { ActionCategory, ActionTemplate } from '@/lib/action-templates';
 import {
   clearDraft,
   getEmptyDraft,
@@ -48,8 +50,58 @@ export function ProposalCreatePage() {
   });
   const [isPublishing, setIsPublishing] = useState(false);
 
+  // App fullscreen state
+  const [appFullscreen, setAppFullscreen] = useState(false);
+  const [appUrl, setAppUrl] = useState('');
+  const [appName, setAppName] = useState('');
+  const [pendingAppInsertIndex, setPendingAppInsertIndex] = useState<number | null>(null);
+  const [pendingAppChoiceIndex, setPendingAppChoiceIndex] = useState<number | null>(null);
+
   // Fetch DAO state to check available proposal modules
   const daoState = useDaoDaoState(daoAddress);
+
+  // Handle messages from DappComponent
+  const handleAppMessages = (_chainId: string, _sender: string, msgs: UnifiedCosmosMsg[]) => {
+    // Convert messages to actions
+    const newActions: ProposalAction[] = msgs.map((msg) => ({
+      id: crypto.randomUUID(),
+      data: msg,
+    }));
+
+    // Insert actions based on context
+    if (draft.proposalType === 'single') {
+      if (pendingAppInsertIndex !== null) {
+        // Insert after specific index
+        const updatedActions = [...draft.actions];
+        updatedActions.splice(pendingAppInsertIndex + 1, 0, ...newActions);
+        updateDraft({ actions: updatedActions });
+      } else {
+        // Append to end
+        updateDraft({ actions: [...draft.actions, ...newActions] });
+      }
+    } else if (pendingAppChoiceIndex !== null) {
+      // Add to specific choice
+      const newChoices = [...draft.choices];
+      newChoices[pendingAppChoiceIndex].actions = [
+        ...newChoices[pendingAppChoiceIndex].actions,
+        ...newActions,
+      ];
+      updateDraft({ choices: newChoices });
+    }
+
+    // Close fullscreen and clear state
+    setAppFullscreen(false);
+    setPendingAppInsertIndex(null);
+    setPendingAppChoiceIndex(null);
+    toast.success(`Added ${newActions.length} action${newActions.length > 1 ? 's' : ''} from ${appName}`);
+  };
+
+  // Handle closing app without messages
+  const handleAppClose = () => {
+    setAppFullscreen(false);
+    setPendingAppInsertIndex(null);
+    setPendingAppChoiceIndex(null);
+  };
 
   // Get available proposal types from computed data
   const availableProposalTypes = daoState.data.value?._computed.availableProposalTypes || {
@@ -572,20 +624,51 @@ export function ProposalCreatePage() {
             }
           }}
           onSelectTemplate={(template) => {
-            if (draft.proposalType === 'single') {
-              if (insertAfterIndex !== null) {
-                insertActionAfter(insertAfterIndex, template);
-                setInsertAfterIndex(null);
-              } else {
-                addAction(template);
-              }
-            } else if (activeChoiceIndex !== null) {
-              addChoiceAction(activeChoiceIndex, template);
-              setActiveChoiceIndex(null);
+            // Check if this is an app template
+            if (template.category === ActionCategory.APPS && template.defaultData?.app) {
+              // Open app in fullscreen
+              setAppUrl(template.defaultData.app.url);
+              setAppName(template.defaultData.app.name);
+              setPendingAppInsertIndex(insertAfterIndex);
+              setPendingAppChoiceIndex(activeChoiceIndex);
+              setAppFullscreen(true);
+              setIsLibraryOpen(false);
               setInsertAfterIndex(null);
+              setActiveChoiceIndex(null);
+            } else {
+              // Regular action template
+              if (draft.proposalType === 'single') {
+                if (insertAfterIndex !== null) {
+                  insertActionAfter(insertAfterIndex, template);
+                  setInsertAfterIndex(null);
+                } else {
+                  addAction(template);
+                }
+              } else if (activeChoiceIndex !== null) {
+                addChoiceAction(activeChoiceIndex, template);
+                setActiveChoiceIndex(null);
+                setInsertAfterIndex(null);
+              }
             }
           }}
         />
+
+        {/* DappComponent in fullscreen for app actions */}
+        {appFullscreen && daoState.data.value && (
+          <DappComponent
+            src={appUrl}
+            name={appName}
+            fullScreen={true}
+            onFullScreenChange={(fullscreen) => {
+              if (!fullscreen) {
+                handleAppClose();
+              }
+            }}
+            onMessagesDecoded={handleAppMessages}
+            daoData={daoState.data.value}
+            showMenuButton={false}
+          />
+        )}
       </div>
     </ProposalFormProvider>
   );

@@ -6,6 +6,7 @@
 import { actionRegistry } from '../action-registry';
 import { BankSendActionType } from './bank-send';
 import { CW20SendActionType } from './cw20-send';
+import { CW20TransferActionType } from './cw20-transfer';
 import { GovVoteActionType } from './gov-vote';
 import { StakingDelegateActionType } from './staking-delegate';
 import { StakingUndelegateActionType } from './staking-undelegate';
@@ -16,8 +17,9 @@ import { WasmUpdateAdminActionType } from './wasm-update-admin';
 // Register all action types
 // Order matters: more specific types should come before more general ones
 actionRegistry.registerAll([
-  // CW20 Send must come before generic Wasm Execute
+  // CW20 Send and Transfer must come before generic Wasm Execute
   CW20SendActionType,
+  CW20TransferActionType,
 
   // Specific message types
   BankSendActionType,
@@ -35,6 +37,7 @@ actionRegistry.registerAll([
 export {
   BankSendActionType,
   CW20SendActionType,
+  CW20TransferActionType,
   GovVoteActionType,
   StakingDelegateActionType,
   StakingUndelegateActionType,

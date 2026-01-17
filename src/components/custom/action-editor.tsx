@@ -59,15 +59,37 @@ export function ActionEditor({
       current = current[path[i]];
     }
     current[path[path.length - 1]] = value;
+    console.log('🚀 ~ updateField ~ current:', current);
     onUpdate({ ...action, data: updated });
-    setJsonString(JSON.stringify(updated, null, 2));
+    const newJson = JSON.stringify(updated, null, 2);
+    setJsonString(newJson);
+    console.log('🚀 ~ updateField ~ current:', newJson);
+  };
+
+  const updateMultiField = (updates: Array<{ path: string[]; value: any }>) => {
+    const updated = JSON.parse(JSON.stringify(action.data));
+
+    // Apply all updates to the cloned object
+    for (const { path, value } of updates) {
+      let current = updated;
+      for (let i = 0; i < path.length - 1; i++) {
+        current = current[path[i]];
+      }
+      current[path[path.length - 1]] = value;
+    }
+
+    onUpdate({ ...action, data: updated });
+    const newJson = JSON.stringify(updated, null, 2);
+    setJsonString(newJson);
   };
 
   const renderFormEditor = () => {
     // If we found a matching action type, use its FormEditor
     if (actionType) {
       const FormEditor = actionType.FormEditor;
-      return <FormEditor data={action.data} onUpdate={updateField} />;
+      return (
+        <FormEditor data={action.data} onUpdate={updateField} onUpdateMulti={updateMultiField} />
+      );
     }
 
     // Unknown message type - show notice to use JSON tab

@@ -63,7 +63,11 @@ export function AppMessagesModal({
                   >
                     Expand All
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setExpandedMessages(new Set())}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExpandedMessages(new Set())}
+                  >
                     Collapse All
                   </Button>
                 </div>

@@ -35,6 +35,7 @@ export interface ActionType<T = any> {
   FormEditor: React.ComponentType<{
     data: T;
     onUpdate: (path: string[], value: any) => void;
+    onUpdateMulti?: (updates: Array<{ path: string[]; value: any }>) => void;
   }>;
 
   /** Preview/view component for displaying the action (used in proposal messages) */

@@ -71,7 +71,7 @@
   --secondary-foreground: oklch(0.9219 0 0);
   --muted: oklch(0.2393 0 0);
   --muted-foreground: oklch(0.7155 0 0);
-  --accent: oklch(0.7932 0.1592 50.8736); /* Bright Orange #FF9F2E */
+  --accent: oklch(0.2393 0 0);
   --accent-foreground: oklch(0.7932 0.1592 50.8736);
   --destructive: oklch(0.6368 0.2078 25.3313);
   --destructive-foreground: oklch(1 0 0);
