@@ -68,6 +68,6 @@ export function filterAppsByChain(apps: AppDefinition[], chainId: string): AppDe
   return apps.filter(
     ({ chainIdFilter }) =>
       (!chainIdFilter?.include || chainIdFilter.include.includes(chainId)) &&
-      (!chainIdFilter?.exclude || !chainIdFilter.exclude.includes(chainId))
+      (!chainIdFilter?.exclude || !chainIdFilter.exclude.includes(chainId)),
   );
 }

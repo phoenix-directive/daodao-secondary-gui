@@ -20,35 +20,32 @@ export function useAppIntegration(options: AppIntegrationOptions = {}) {
   /**
    * Handle messages from the iframe app
    */
-  const handleAppMessage = useCallback(
-    (messageData: any) => {
-      // Check if this is a broadcast request (app wants to submit transactions)
-      if (
-        messageData &&
-        typeof messageData === 'object' &&
-        (messageData.type === 'broadcast' || messageData.type === 'execute')
-      ) {
-        // Extract messages/actions from the app
-        const messages = Array.isArray(messageData.messages)
-          ? messageData.messages
-          : messageData.message
-          ? [messageData.message]
-          : [];
+  const handleAppMessage = useCallback((messageData: any) => {
+    // Check if this is a broadcast request (app wants to submit transactions)
+    if (
+      messageData &&
+      typeof messageData === 'object' &&
+      (messageData.type === 'broadcast' || messageData.type === 'execute')
+    ) {
+      // Extract messages/actions from the app
+      const messages = Array.isArray(messageData.messages)
+        ? messageData.messages
+        : messageData.message
+        ? [messageData.message]
+        : [];
 
-        if (messages.length > 0) {
-          // Convert to ProposalAction format
-          const actions: ProposalAction[] = messages.map((msg: any) => ({
-            id: crypto.randomUUID(),
-            data: msg,
-          }));
+      if (messages.length > 0) {
+        // Convert to ProposalAction format
+        const actions: ProposalAction[] = messages.map((msg: any) => ({
+          id: crypto.randomUUID(),
+          data: msg,
+        }));
 
-          setPendingActions(actions);
-          setShowActionsModal(true);
-        }
+        setPendingActions(actions);
+        setShowActionsModal(true);
       }
-    },
-    []
-  );
+    }
+  }, []);
 
   /**
    * Confirm and add pending actions to proposal

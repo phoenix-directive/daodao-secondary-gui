@@ -113,6 +113,12 @@ export const DappComponent = forwardRef<DappComponentRef, DappComponentProps>(
     const iframeRef = useRef<AppIframeRef>(null);
     const [isFullscreenLocal, setIsFullscreenLocal] = useState(fullScreen);
     const [showAppPicker, setShowAppPicker] = useState(false);
+    const [internalName, setInternalName] = useState(name);
+    const [internalUrl, setInternalUrl] = useState(src);
+
+    useEffect(() => {
+      setInternalUrl(src);
+    }, [src]);
 
     // Expose iframe to parent
     useImperativeHandle(ref, () => ({
@@ -139,10 +145,12 @@ export const DappComponent = forwardRef<DappComponentRef, DappComponentProps>(
     }, [onFullScreenChange]);
 
     const handleOpenApp = useCallback(
-      (newUrl: string) => {
+      (newUrl: string, newName?: string) => {
         if (onUrlChange) {
           onUrlChange(newUrl);
         }
+        setInternalName(newName ?? newUrl);
+        setInternalUrl(newUrl);
         if (iframeRef.current?.iframe) {
           iframeRef.current.iframe.src = newUrl;
         }
@@ -162,6 +170,33 @@ export const DappComponent = forwardRef<DappComponentRef, DappComponentProps>(
       }
     }, [isFullscreenMode]);
 
+    // Shared iframe content - rendered once and reused in both modes
+    const iframeContent = (
+      <>
+        {loading ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : error ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-lg font-semibold mb-2">Error</p>
+              <p className="text-muted-foreground">{error}</p>
+            </div>
+          </div>
+        ) : (
+          <AppIframe
+            ref={iframeRef}
+            src={src}
+            className="w-full border-0 flex-1"
+            title={internalName || 'App'}
+            onMessagesDecoded={onMessagesDecoded}
+            daoData={daoData}
+          />
+        )}
+      </>
+    );
+
     // Render fullscreen mode
     if (isFullscreenMode) {
       const fullScreenContent = (
@@ -170,7 +205,7 @@ export const DappComponent = forwardRef<DappComponentRef, DappComponentProps>(
           <div className="flex items-center justify-between gap-4 px-4 py-3 border-b">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
-              <p className="text-sm text-muted-foreground truncate">{name || src}</p>
+              <p className="text-sm text-muted-foreground truncate">{internalName || src}</p>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -191,29 +226,7 @@ export const DappComponent = forwardRef<DappComponentRef, DappComponentProps>(
           </div>
 
           {/* Content */}
-          <div className="flex-1 relative">
-            {loading ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              </div>
-            ) : error ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-lg font-semibold mb-2">Error</p>
-                  <p className="text-muted-foreground">{error}</p>
-                </div>
-              </div>
-            ) : (
-              <AppIframe
-                ref={iframeRef}
-                src={src}
-                className="w-full h-full border-0"
-                title={name || 'App'}
-                onMessagesDecoded={onMessagesDecoded}
-                daoData={daoData}
-              />
-            )}
-          </div>
+          <div className="flex-1 relative flex">{iframeContent}</div>
         </div>
       );
 
@@ -229,7 +242,7 @@ export const DappComponent = forwardRef<DappComponentRef, DappComponentProps>(
                   <DialogTitle>{appPickerDialogTitle}</DialogTitle>
                 </DialogHeader>
                 <AppPicker
-                  url={src}
+                  url={internalUrl}
                   onOpenApp={handleOpenApp}
                   loading={loading}
                   error={error}
@@ -247,7 +260,7 @@ export const DappComponent = forwardRef<DappComponentRef, DappComponentProps>(
     // Render card mode
     return (
       <Card className={cx('p-0', className)}>
-        <CardContent className="p-0 h-full flex flex-col flex-1">
+        <CardContent className="p-0 flex flex-col flex-1">
           {/* Card header with fullscreen toggle */}
           {showCardHeader && (
             <div className="flex items-center justify-between gap-2 px-3 py-2 border-b bg-muted/30">
@@ -278,28 +291,7 @@ export const DappComponent = forwardRef<DappComponentRef, DappComponentProps>(
           )}
 
           {/* Iframe container */}
-          <div className="relative w-full flex-1">
-            {loading ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : error ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-                <div className="text-center p-4">
-                  <p className="text-sm text-destructive">{error}</p>
-                </div>
-              </div>
-            ) : (
-              <AppIframe
-                ref={iframeRef}
-                src={src}
-                className="absolute inset-0 w-full h-full border-0"
-                title={name || 'App'}
-                onMessagesDecoded={onMessagesDecoded}
-                daoData={daoData}
-              />
-            )}
-          </div>
+          <div className="relative w-full flex-1 flex flex-col">{iframeContent}</div>
         </CardContent>
       </Card>
     );

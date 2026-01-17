@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 import { actionRegistry } from '@/lib/action-types';
 import { useTheme } from '@/lib/useTheme';
-import { ChevronDown, ChevronRight, FileText } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ReactNode, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -21,6 +22,7 @@ interface ProposalMessageProps {
   index: number;
   expanded?: boolean;
   onToggleExpanded?: (expanded: boolean) => void;
+  onRemove?: () => void;
 }
 
 export function ProposalMessage({
@@ -28,6 +30,7 @@ export function ProposalMessage({
   index,
   expanded: controlledExpanded,
   onToggleExpanded,
+  onRemove,
 }: ProposalMessageProps) {
   const [showRaw, setShowRaw] = useState(false);
   const [internalExpanded, setInternalExpanded] = useState(false);
@@ -127,6 +130,19 @@ export function ProposalMessage({
             </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
+            {onRemove && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove();
+                }}
+                className="text-destructive hover:text-destructive h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             {messageType.expandable && (
               <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                 <span className="text-sm text-muted-foreground">Show Raw</span>

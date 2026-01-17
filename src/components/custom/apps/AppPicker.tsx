@@ -4,7 +4,7 @@ import { isLocalhost } from '@/config/config';
 import ecosystemProjects from '@/config/ecosystemProjects.json';
 import { DaoDaoStateResponse } from '@/hooks/useDaoDao';
 import { cx } from 'class-variance-authority';
-import { AlertCircle, ExternalLink, Plus } from 'lucide-react';
+import { AlertCircle, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface EcosystemProject {
@@ -243,7 +243,7 @@ export function AppPicker({
       {/* Custom URL Input - Only show for custom apps */}
       {isCustomSelected && (
         <>
-          <Card className="border-yellow-500/50 bg-yellow-500/10">
+          {/* <Card className="border-yellow-500/50 bg-yellow-500/10">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
@@ -267,7 +267,7 @@ export function AppPicker({
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <div className="space-y-2">
             <label htmlFor="app-url" className="text-sm font-medium">
