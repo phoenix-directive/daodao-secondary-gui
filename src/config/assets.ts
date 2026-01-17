@@ -1,4 +1,4 @@
-import { AssetInfoBaseFor_Addr } from '@/generated/chain/creda-oracle/response_to_get_offer';
+import { AssetInfoBaseFor_Addr } from '@/hooks/helpers/asset-helpers';
 import { allAssets } from '@/hooks/helpers/assets';
 
 export interface AssetMeta {

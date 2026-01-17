@@ -93,7 +93,9 @@ export function ProposalCreatePage() {
     setAppFullscreen(false);
     setPendingAppInsertIndex(null);
     setPendingAppChoiceIndex(null);
-    toast.success(`Added ${newActions.length} action${newActions.length > 1 ? 's' : ''} from ${appName}`);
+    toast.success(
+      `Added ${newActions.length} action${newActions.length > 1 ? 's' : ''} from ${appName}`,
+    );
   };
 
   // Handle closing app without messages

@@ -1,4 +1,5 @@
-import { Balance, useBalances } from '@/hooks';
+import { useBalances } from '@/hooks';
+import { Balance } from '@/hooks/useBalances';
 import { Signal } from '@preact/signals-react';
 import { createContext, ReactNode, useContext } from 'react';
 

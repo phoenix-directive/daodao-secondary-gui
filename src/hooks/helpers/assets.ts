@@ -1,12 +1,11 @@
-import { assetList } from "@/config/chain-data";
-import type { AssetList } from "@chain-registry/types";
+import { assetList } from '@/config/chain-data';
 
 export enum Chain {
-  Terra = "phoenix-1",
+  Terra = 'phoenix-1',
 }
 
 export const allAssets = [
-  ...(assetList as AssetList).assets.map((a) => ({
+  ...assetList.assets.map((a) => ({
     ...a,
     chain: Chain.Terra,
   })),
