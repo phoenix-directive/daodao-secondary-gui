@@ -1,4 +1,4 @@
-import { Layout } from '@/components/layout/layout';
+import { Layout } from '@/components/layout/_layout';
 import { ScrollToTop } from '@/components/layout/scroll-to-top';
 import { ShuttleProvider } from '@/delphi-labs/shuttle-react';
 import { triggerReload } from '@/hooks/useReload';

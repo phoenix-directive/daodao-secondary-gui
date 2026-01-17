@@ -1,5 +1,5 @@
-import { Footer } from '@/components/layout/footer';
-import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/_footer';
+import { Header } from '@/components/layout/_header';
 import { cn } from '@/lib/utils';
 import { useLocation } from 'react-router-dom';
 
