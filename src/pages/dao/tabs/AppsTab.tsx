@@ -4,12 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDaoDaoState } from '@/hooks/useDaoDao';
 import { getEmptyDraft, loadDraft, ProposalAction, saveDraft } from '@/lib/proposal-drafts';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export function AppsTab() {
-  const [url, setUrl] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialUrl = searchParams.get('url') || '';
+  const [url, setUrl] = useState(initialUrl);
+
+  useEffect(() => {
+    setUrl(initialUrl);
+  }, [initialUrl]);
+
   const [name, setName] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -17,8 +24,15 @@ export function AppsTab() {
   const daoState = useDaoDaoState(daoAddress);
   const daoData = daoState.data.value ?? undefined;
 
-  // Load current draft to show in modal
-  const draft = daoAddress ? loadDraft(daoAddress) || getEmptyDraft() : getEmptyDraft();
+  // Draft state for modal
+  const [draft, setDraft] = useState(() =>
+    daoAddress ? loadDraft(daoAddress) || getEmptyDraft() : getEmptyDraft(),
+  );
+
+  // Keep draft in sync with daoAddress
+  useEffect(() => {
+    setDraft(daoAddress ? loadDraft(daoAddress) || getEmptyDraft() : getEmptyDraft());
+  }, [daoAddress]);
 
   const handleMessagesDecoded = (chain: string, sender: string, msgs: any[]) => {
     console.log('Decoded messages from app:', { chain, sender, msgs });
@@ -78,11 +92,13 @@ export function AppsTab() {
   const handleRemoveAction = (index: number) => {
     if (!daoAddress) return;
 
-    const currentDraft = loadDraft(daoAddress) || getEmptyDraft();
+    const currentDraft = { ...draft };
 
     if (currentDraft.proposalType === 'single') {
       currentDraft.actions = currentDraft.actions.filter((_, i) => i !== index);
     } else if (currentDraft.choices.length > 0) {
+      currentDraft.choices = [...currentDraft.choices];
+      currentDraft.choices[0] = { ...currentDraft.choices[0] };
       currentDraft.choices[0].actions = currentDraft.choices[0].actions.filter(
         (_, i) => i !== index,
       );
@@ -90,6 +106,7 @@ export function AppsTab() {
 
     currentDraft.lastModified = Date.now();
     saveDraft(daoAddress, currentDraft);
+    setDraft(currentDraft);
 
     toast.success('Message removed from draft');
   };
@@ -97,16 +114,18 @@ export function AppsTab() {
   const handleClearAll = () => {
     if (!daoAddress) return;
 
-    const currentDraft = loadDraft(daoAddress) || getEmptyDraft();
+    const currentDraft = { ...draft };
 
     if (currentDraft.proposalType === 'single') {
       currentDraft.actions = [];
     } else if (currentDraft.choices.length > 0) {
-      currentDraft.choices[0].actions = [];
+      currentDraft.choices = [...currentDraft.choices];
+      currentDraft.choices[0] = { ...currentDraft.choices[0], actions: [] };
     }
 
     currentDraft.lastModified = Date.now();
     saveDraft(daoAddress, currentDraft);
+    setDraft(currentDraft);
 
     toast.success('All messages cleared from draft');
     setIsModalOpen(false);
@@ -117,8 +136,8 @@ export function AppsTab() {
     draft.proposalType === 'single'
       ? draft.actions
       : draft.choices.length > 0
-      ? draft.choices[0].actions
-      : [];
+        ? draft.choices[0].actions
+        : [];
 
   if (daoState.loading.value || !daoData) {
     return (
@@ -136,6 +155,24 @@ export function AppsTab() {
     );
   }
 
+  // Helper to sync url state and query param
+  const handleSetUrl = (newUrl: string, name?: string) => {
+    setUrl(newUrl);
+    setName(name ?? '');
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (newUrl) {
+          params.set('url', newUrl);
+        } else {
+          params.delete('url');
+        }
+        return params;
+      },
+      { replace: false },
+    );
+  };
+
   return (
     <>
       <Card className="flex-0 mb-6">
@@ -143,20 +180,8 @@ export function AppsTab() {
           <CardTitle>Apps</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* <AppRenderer
-            fullScreen={fullScreen}
-            onFullScreenChange={setFullScreen}
-            daoData={daoData}
-          /> */}
-
-          <AppPicker
-            url={url}
-            onOpenApp={(newUrl, name) => {
-              setUrl(newUrl);
-              setName(name);
-            }}
-            daoData={daoData}
-          />
+          {/* ...existing code... */}
+          <AppPicker url={url} onOpenApp={handleSetUrl} daoData={daoData} />
         </CardContent>
       </Card>
 
@@ -167,7 +192,7 @@ export function AppsTab() {
           name={name ?? url}
           daoData={daoData}
           onUrlChange={(url) => {
-            setUrl(url);
+            handleSetUrl(url);
           }}
           onMessagesDecoded={handleMessagesDecoded}
         />

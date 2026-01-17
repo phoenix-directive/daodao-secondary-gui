@@ -7,7 +7,7 @@ interface TreasuryTabProps {
   daoName?: string;
 }
 
-const useLocalhost = true;
+const useLocalhost = false;
 const host = useLocalhost ? 'http://localhost:5100' : 'https://phoenix.money';
 
 export function TreasuryTab({ daoAddress, daoName }: TreasuryTabProps) {
