@@ -168,7 +168,7 @@ const AppIframeInner = forwardRef<AppIframeRef, AppIframeProps>(
     // Setup iframe wallet injection
     const { wallet: injectedWallet, iframeRef } = useIframe({
       metadata: {
-        name: 'DAO GO',
+        name: 'DAO',
         imageUrl: window.location.origin + '/logo.png',
       },
       walletClientOverrides: {
@@ -176,14 +176,14 @@ const AppIframeInner = forwardRef<AppIframeRef, AppIframeProps>(
           decodeAmino(signer, signDoc);
           return {
             type: 'error',
-            error: 'Handled by DAO GO.',
+            error: 'Handled by DAO.',
           };
         },
         signDirect: (_chainId: string, signer: string, signDoc: SignDoc) => {
           decodeDirect(signer, signDoc);
           return {
             type: 'error',
-            error: 'Handled by DAO GO.',
+            error: 'Handled by DAO.',
           };
         },
         enable: async (chainIds: string | string[]) => {
@@ -279,14 +279,14 @@ const AppIframeInner = forwardRef<AppIframeRef, AppIframeProps>(
           decodeDirect(signerAddress, signDoc);
           return {
             type: 'error',
-            error: 'Handled by DAO GO.',
+            error: 'Handled by DAO.',
           };
         },
         signAmino: (signerAddress, signDoc) => {
           decodeAmino(signerAddress, signDoc);
           return {
             type: 'error',
-            error: 'Handled by DAO GO.',
+            error: 'Handled by DAO.',
           };
         },
         getAccounts: async () => {
