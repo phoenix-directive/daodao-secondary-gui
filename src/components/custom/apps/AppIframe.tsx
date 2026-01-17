@@ -4,7 +4,6 @@ import { decodedStargateMsgToCw, getAminoTypes, protobufToCwMsg } from '@/daodao
 import { UnifiedCosmosMsg } from '@/daodao/types/contracts';
 import { EMPTY_PUB_KEY } from '@/hooks/helpers/helpers';
 import { DaoDaoStateResponse } from '@/hooks/useDaoDao';
-import { useIsConnected } from '@/hooks/useWallet';
 import type { StdSignDoc } from '@cosmjs/amino';
 import { fromBech32 } from '@cosmjs/encoding';
 import type { SimpleAccount, WalletAccount } from '@cosmos-kit/core';
@@ -99,8 +98,6 @@ AppIframe.displayName = 'AppIframe';
  */
 const AppIframeInner = forwardRef<AppIframeRef, AppIframeProps>(
   ({ src, allow = 'clipboard-write', className, title, onMessagesDecoded, daoData }, ref) => {
-    const isConnected = useIsConnected();
-
     const decodeDirect = useCallback(
       (sender: string, signDoc: SignDoc) => {
         const encodedMessages = TxBody.decode(signDoc.bodyBytes).messages;
@@ -187,13 +184,6 @@ const AppIframeInner = forwardRef<AppIframeRef, AppIframeProps>(
           };
         },
         enable: async (chainIds: string | string[]) => {
-          if (!isConnected) {
-            return {
-              type: 'error',
-              error: 'Wallet not connected',
-            };
-          }
-
           return {
             type: 'success',
           };
