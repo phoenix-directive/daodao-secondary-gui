@@ -10,15 +10,16 @@ interface BreadcrumbItem {
 export function Breadcrumbs() {
   const location = useLocation();
   const path = location.pathname;
+  console.log('🚀 ~ Breadcrumbs ~ path:', path);
 
   // Parse path manually since useParams doesn't work outside Routes
   // Match patterns: /dao/:address or /dao/:address/:tab or /dao/:address/proposals/:proposalId or /dao/:address/proposals/create
   const daoMatch = path.match(
-    /^\/dao\/([^\/]+)(?:\/proposals\/(\d+)|\/proposals\/(create)|\/([^\/]+))?/,
+    /^\/dao\/([^/]+)(?:\/proposals\/([A-Z]\d+)|\/proposals\/(create)|\/([^/]+))?/,
   );
 
   const address = daoMatch?.[1];
-  const proposalId = daoMatch?.[2]; // from /dao/:address/proposals/:proposalId
+  const proposalId = daoMatch?.[2]; // from /dao/:address/proposals/:proposalId (e.g., "A-123")
   const createPath = daoMatch?.[3]; // from /dao/:address/proposals/create
   const tab = daoMatch?.[4]; // from /dao/:address/:tab
 
@@ -57,6 +58,7 @@ export function Breadcrumbs() {
           });
         } else {
           // Add proposal detail breadcrumb
+          // Format the proposal ID nicely (e.g., "A-123" -> "A-00123")
           items.push({
             label: `Proposal ${proposalId}`,
           });

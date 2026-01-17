@@ -61,11 +61,7 @@ export interface ChainInfo {
 }
 
 export type PreparedChainInfo = ChainService['terra'];
-export interface ChainClients {
-  chainId: Chain;
-  read: ReadService;
-  write: WriteService;
-}
+export type ChainClients = ReturnType<typeof ChainService.prepare>;
 export const useLocalNftindexer = false;
 export const useLocalBoostIndexer = true;
 const isLocalhost = window.location.hostname === 'localhost';
@@ -197,4 +193,3 @@ export class ChainService {
     };
   }
 }
-

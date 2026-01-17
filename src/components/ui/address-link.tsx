@@ -1,5 +1,6 @@
 import { Chain } from '@/hooks/helpers/assets';
 import { useChain } from '@/hooks/useChain';
+import { useAddress } from '@/hooks/useWallet';
 import { cn } from '@/lib/utils';
 import { Check, Copy, LucideIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -29,11 +30,18 @@ export function AddressLink({
   additionalLink,
 }: AddressLinkProps) {
   const chainService = useChain(chain);
+  const connectedAddress = useAddress(chain);
   const [copied, setCopied] = useState(false);
   const [tooltipOpen, setTooltipOpen] = useState(false);
 
-  const shortAddress = short ? `${address.slice(0, 14)}...${address.slice(-8)}` : address;
-  const displayText = label || shortAddress;
+  const isConnectedWallet = connectedAddress?.toLowerCase() === address.toLowerCase();
+
+  const shortAddress = short
+    ? address.length > 22
+      ? `${address.slice(0, 14)}...${address.slice(-8)}`
+      : address
+    : address;
+  const displayText = isConnectedWallet ? '[me]' : label || shortAddress;
 
   const link = useMemo(() => {
     return chainService.linkAddress(address);

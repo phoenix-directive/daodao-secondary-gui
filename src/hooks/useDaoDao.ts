@@ -41,6 +41,12 @@ export interface DaoDaoDumpState {
 
 export interface DaoDaoStateResponse {
   data: DaoDaoDumpState;
+  _computed: {
+    availableProposalTypes: {
+      single: boolean;
+      multiple: boolean;
+    };
+  };
 }
 
 /**
@@ -61,7 +67,20 @@ export const useDaoDaoState = (contractAddress: string | undefined) => {
       cacheTimeMin,
     );
 
-    return result;
+    // Compute available proposal types based on enabled modules
+    const modules = result?.proposal_modules || [];
+    const hasSingleChoice = modules.some((m) => m.prefix === 'A' && m.status === 'enabled');
+    const hasMultipleChoice = modules.some((m) => m.prefix === 'B' && m.status === 'enabled');
+
+    return {
+      ...result,
+      _computed: {
+        availableProposalTypes: {
+          single: hasSingleChoice,
+          multiple: hasMultipleChoice,
+        },
+      },
+    };
   }, [contractAddress, globalReload.value]);
 };
 

@@ -12,10 +12,11 @@ import { useChain } from '@/hooks/useChain';
 import { useDaoDaoState } from '@/hooks/useDaoDao';
 import { globalReload } from '@/hooks/useReload';
 import { useAddress } from '@/hooks/useWallet';
-import { AlertCircle, ExternalLink, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ProposalAction, ProposalDraft } from '@/lib/proposal-drafts';
+import { AlertCircle, Copy, ExternalLink, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 
@@ -25,6 +26,7 @@ export function ProposalDetailPage() {
     proposalId: string;
   }>();
   const chain = useChain(Chain.Terra);
+  const navigate = useNavigate();
   const daoState = useDaoDaoState(daoAddress);
   const daoData = daoState.data.value;
 
@@ -35,11 +37,29 @@ export function ProposalDetailPage() {
   const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
   const address = useAddress(Chain.Terra);
 
-  const proposalModuleAddress = daoData?.proposal_modules?.[0]?.address;
+  // Parse the prefix and numeric ID from the proposalId (e.g., "A-123" -> prefix="A", id=123)
+  const { prefix, numericId } = useMemo(() => {
+    if (!proposalId) return { prefix: null, numericId: null };
+    const match = proposalId.match(/^([A-Z])(\d+)$/);
+    if (match) {
+      return { prefix: match[1], numericId: parseInt(match[2], 10) };
+    }
+    // Fallback for backwards compatibility with numeric-only IDs
+    return { prefix: 'A', numericId: parseInt(proposalId, 10) };
+  }, [proposalId]);
+
+  // Find the correct proposal module based on the prefix
+  const proposalModuleAddress = useMemo(() => {
+    if (!daoData || !prefix) return null;
+    const module = daoData.proposal_modules?.find(
+      (m) => m.prefix === prefix && m.status === 'enabled',
+    );
+    return module?.address || null;
+  }, [daoData, prefix]);
 
   useEffect(() => {
     const fetchProposal = async () => {
-      if (!proposalModuleAddress || !proposalId) return;
+      if (!proposalModuleAddress || numericId === null) return;
 
       setIsLoading(true);
       setError(null);
@@ -48,7 +68,7 @@ export function ProposalDetailPage() {
         const [proposalResult, configResult] = await Promise.all([
           chain.read.query<ProposalResponse>(proposalModuleAddress, {
             proposal: {
-              proposal_id: parseInt(proposalId, 10),
+              proposal_id: numericId,
             },
           }),
           chain.read.queryCached<Config>(proposalModuleAddress, { config: {} }, 60 * 24),
@@ -65,7 +85,7 @@ export function ProposalDetailPage() {
     };
 
     fetchProposal();
-  }, [proposalModuleAddress, proposalId, chain, globalReload.value]);
+  }, [proposalModuleAddress, numericId, chain, globalReload.value]);
 
   const getExpirationDate = (expiration: any) => {
     if (!expiration) return 'Unknown';
@@ -84,6 +104,28 @@ export function ProposalDetailPage() {
       return 'Never';
     }
     return 'Unknown';
+  };
+
+  const handleDuplicate = () => {
+    if (!proposal || !daoAddress) return;
+
+    // Convert proposal messages to actions format
+    const actions: ProposalAction[] = proposal.proposal.msgs.map((msg) => ({
+      id: crypto.randomUUID(),
+      data: msg,
+    }));
+
+    const duplicateData: ProposalDraft = {
+      title: proposal.proposal.title,
+      description: proposal.proposal.description,
+      proposalType: 'single',
+      actions,
+      choices: [],
+      lastModified: Date.now(),
+    };
+
+    const encodedData = encodeURIComponent(JSON.stringify(duplicateData));
+    navigate(`/dao/${daoAddress}/proposals/create?duplicate=${encodedData}`);
   };
 
   if (isLoading) {
@@ -135,12 +177,20 @@ export function ProposalDetailPage() {
             <CardHeader>
               <div className="flex flex-col  justify-between gap-2">
                 <div className="flex justify-between">
-                  <span className="text-sm font-mono text-muted-foreground">#{proposal.id}</span>
-                  <ProposalStatusIcon
-                    status={status}
-                    showLabel={true}
-                    className="text-sm font-semibold shrink-0"
-                  />
+                  <span className="text-sm font-mono text-muted-foreground">
+                    {prefix}-{proposal.id.toString().padStart(5, '0')}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={handleDuplicate}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Duplicate
+                    </Button>
+                    <ProposalStatusIcon
+                      status={status}
+                      showLabel={true}
+                      className="text-sm font-semibold shrink-0"
+                    />
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-3xl wrap-break-word">
@@ -179,7 +229,7 @@ export function ProposalDetailPage() {
 
                 <div>
                   <a
-                    href={`https://daodao.zone/dao/${daoAddress}/proposals/A${proposal.id}`}
+                    href={`https://daodao.zone/dao/${daoAddress}/proposals/${prefix}${proposal.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-sm text-primary hover:underline"
@@ -275,7 +325,7 @@ export function ProposalDetailPage() {
 
               <div>
                 <a
-                  href={`https://daodao.zone/dao/${daoAddress}/proposals/A${proposal.id}`}
+                  href={`https://daodao.zone/dao/${daoAddress}/proposals/${prefix}${proposal.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
@@ -297,11 +347,11 @@ export function ProposalDetailPage() {
                 config={config}
                 onVoteSuccess={() => {
                   // Refetch proposal data after vote
-                  if (proposalModuleAddress && proposalId) {
+                  if (proposalModuleAddress && numericId !== null) {
                     chain.read
                       .query<ProposalResponse>(proposalModuleAddress, {
                         proposal: {
-                          proposal_id: parseInt(proposalId, 10),
+                          proposal_id: numericId,
                         },
                       })
                       .then(setProposal);

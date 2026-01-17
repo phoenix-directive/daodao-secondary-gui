@@ -121,13 +121,12 @@ export function DaoPage() {
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        variant={isCurrentlyFavorite ? 'default' : 'outline'}
-                        size="sm"
+                        variant="ghost"
+                        size="icon"
                         onClick={handleToggleFavorite}
-                        className="gap-2"
+                        className="h-9 w-9"
                       >
-                        <Star className={`h-4 w-4 ${isCurrentlyFavorite ? 'fill-current' : ''}`} />
-                        {isCurrentlyFavorite ? 'Favorited' : 'Favorite'}
+                        <Star className={`h-5 w-5 ${isCurrentlyFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
                       </Button>
                     </div>
                   </div>

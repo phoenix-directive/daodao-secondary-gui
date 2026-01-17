@@ -1,31 +1,29 @@
-import { Card, CardContent } from '@/components/ui/card'
+import { MemberList } from '@/components/custom/members/MemberList';
+import { Card, CardContent } from '@/components/ui/card';
+import { useDaoDaoState } from '@/hooks/useDaoDao';
+import { AlertCircle } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
 export function MembersTab() {
-  return (
-    <Card>
-      <CardContent className="p-8">
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="mb-4 rounded-full bg-primary/10 p-4">
-            <svg
-              className="h-8 w-8 text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
+  const { address: daoAddress } = useParams<{ address: string }>();
+  const daoState = useDaoDaoState(daoAddress);
+  const daoData = daoState.data.value;
+
+  if (!daoData || !daoData.voting_module) {
+    return (
+      <Card>
+        <CardContent className="p-8">
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="mb-2 text-lg font-semibold">No Voting Module</h3>
+            <p className="text-sm text-muted-foreground">
+              This DAO does not have a voting module configured.
+            </p>
           </div>
-          <h3 className="mb-2 text-lg font-semibold">Members</h3>
-          <p className="text-sm text-muted-foreground">
-            Members content coming soon...
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  )
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return <MemberList votingModuleAddress={daoData.voting_module} />;
 }

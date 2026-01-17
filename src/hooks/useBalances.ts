@@ -43,8 +43,8 @@ export const useBalances = (contractAddress: string | undefined) => {
         .filter((balance): balance is Balance => balance !== null)
         .sort((a, b) => {
           // Sort by USD value (descending)
-          const aValue = parseFloat(a.amount) * parseFloat(a.priceUsd) / Math.pow(10, a.decimals);
-          const bValue = parseFloat(b.amount) * parseFloat(b.priceUsd) / Math.pow(10, b.decimals);
+          const aValue = (parseFloat(a.amount) * parseFloat(a.priceUsd)) / Math.pow(10, a.decimals);
+          const bValue = (parseFloat(b.amount) * parseFloat(b.priceUsd)) / Math.pow(10, b.decimals);
           return bValue - aValue;
         });
 
@@ -64,10 +64,10 @@ export const useBalances = (contractAddress: string | undefined) => {
  */
 export const fromBaseUnits = (amount: string, decimals: number): string => {
   if (!amount || amount === '0') return '0';
-  
+
   const num = parseFloat(amount);
   if (isNaN(num)) return '0';
-  
+
   const divisor = Math.pow(10, decimals);
   return (num / divisor).toFixed(decimals);
 };
@@ -80,10 +80,10 @@ export const fromBaseUnits = (amount: string, decimals: number): string => {
  */
 export const toBaseUnits = (amount: string, decimals: number): string => {
   if (!amount || amount === '0') return '0';
-  
+
   const num = parseFloat(amount);
   if (isNaN(num)) return '0';
-  
+
   const multiplier = Math.pow(10, decimals);
   return Math.floor(num * multiplier).toString();
 };

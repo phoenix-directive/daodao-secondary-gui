@@ -1,20 +1,32 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Send } from 'lucide-react';
+import { ActionType } from '../action-registry';
 
-interface CW20SendFormProps {
-  data: {
-    wasm: {
-      execute: {
-        contract_addr: string;
-        funds: any[];
-        msg: { transfer: { recipient: string; amount: string } };
-      };
+// Type definition for CW20 Send message
+export type CW20SendMsg = {
+  wasm: {
+    execute: {
+      contract_addr: string;
+      funds: any[];
+      msg: { transfer: { recipient: string; amount: string } };
     };
   };
-  onUpdate: (path: string[], value: any) => void;
-}
+};
 
-export function CW20SendForm({ data, onUpdate }: CW20SendFormProps) {
+// Type guard
+const isCW20Send = (data: any): data is CW20SendMsg => {
+  return data?.wasm?.execute?.msg?.transfer !== undefined;
+};
+
+// Form component
+function CW20SendForm({
+  data,
+  onUpdate,
+}: {
+  data: CW20SendMsg;
+  onUpdate: (path: string[], value: any) => void;
+}) {
   const executeData = data.wasm.execute;
 
   return (
@@ -50,3 +62,14 @@ export function CW20SendForm({ data, onUpdate }: CW20SendFormProps) {
     </div>
   );
 }
+
+// Export the action type configuration
+export const CW20SendActionType: ActionType<CW20SendMsg> = {
+  id: 'cw20_send',
+  name: 'Send CW20 Tokens',
+  icon: Send,
+  guard: isCW20Send,
+  getTitle: () => 'CW20 Send',
+  expandable: false,
+  FormEditor: CW20SendForm,
+};

@@ -7,33 +7,55 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useDaoDaoState } from '@/hooks/useDaoDao';
 import { ActionTemplate } from '@/lib/action-templates';
 import {
   clearDraft,
   getEmptyDraft,
   loadDraft,
   ProposalAction,
+  ProposalChoice,
   ProposalDraft,
   saveDraft,
 } from '@/lib/proposal-drafts';
 import { ProposalFormProvider } from '@/lib/proposal-form-context';
 import { ArrowLeft, Eye, FileText, Library, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export function ProposalCreatePage() {
   const { address: daoAddress } = useParams<{ address: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [insertAfterIndex, setInsertAfterIndex] = useState<number | null>(null);
+  const [activeChoiceIndex, setActiveChoiceIndex] = useState<number | null>(null);
   const [draft, setDraft] = useState<ProposalDraft>(() => {
     if (daoAddress) {
-      return loadDraft(daoAddress) || getEmptyDraft();
+      const loadedDraft = loadDraft(daoAddress) || getEmptyDraft();
+      // Override proposal type from query param if present
+      const typeParam = new URLSearchParams(window.location.search).get('type');
+      if (typeParam === 'A' || typeParam === 'single') {
+        loadedDraft.proposalType = 'single';
+      } else if (typeParam === 'B' || typeParam === 'multiple') {
+        loadedDraft.proposalType = 'multiple';
+      }
+      return loadedDraft;
     }
     return getEmptyDraft();
   });
   const [isPublishing, setIsPublishing] = useState(false);
+
+  // Fetch DAO state to check available proposal modules
+  const daoState = useDaoDaoState(daoAddress);
+
+  // Get available proposal types from computed data
+  const availableProposalTypes = daoState.data.value?._computed.availableProposalTypes || {
+    single: false,
+    multiple: false,
+  };
 
   // Auto-save draft to localStorage
   useEffect(() => {
@@ -44,6 +66,32 @@ export function ProposalCreatePage() {
       return () => clearTimeout(timeoutId);
     }
   }, [daoAddress, draft]);
+
+  // Handle duplicate query param
+  useEffect(() => {
+    const duplicateParam = searchParams.get('duplicate');
+    if (duplicateParam && daoAddress) {
+      try {
+        const duplicateData = JSON.parse(decodeURIComponent(duplicateParam));
+        setDraft({
+          title: `Copy of ${duplicateData.title}`,
+          description: duplicateData.description,
+          proposalType: duplicateData.proposalType,
+          actions: duplicateData.actions,
+          choices: duplicateData.choices,
+          lastModified: Date.now(),
+        });
+        toast.success('Proposal duplicated successfully');
+      } catch (error) {
+        console.error('Failed to parse duplicate data:', error);
+        toast.error('Failed to duplicate proposal');
+      }
+      // Remove the query param after applying
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('duplicate');
+      setSearchParams(newSearchParams, { replace: true });
+    }
+  }, [searchParams, daoAddress, setSearchParams]);
 
   const updateDraft = (updates: Partial<ProposalDraft>) => {
     setDraft((prev) => ({ ...prev, ...updates }));
@@ -79,6 +127,16 @@ export function ProposalCreatePage() {
     updateDraft({ actions: newActions });
   };
 
+  const insertActionAfter = (index: number, template?: ActionTemplate) => {
+    const newAction: ProposalAction = {
+      id: crypto.randomUUID(),
+      data: template?.defaultData || {},
+    };
+    const newActions = [...draft.actions];
+    newActions.splice(index + 1, 0, newAction);
+    updateDraft({ actions: newActions });
+  };
+
   const moveAction = (index: number, direction: 'up' | 'down') => {
     if (
       (direction === 'up' && index === 0) ||
@@ -91,6 +149,77 @@ export function ProposalCreatePage() {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     [newActions[index], newActions[targetIndex]] = [newActions[targetIndex], newActions[index]];
     updateDraft({ actions: newActions });
+  };
+
+  // Choice management functions for multiple choice proposals
+  const addChoice = () => {
+    const newChoice: ProposalChoice = {
+      id: crypto.randomUUID(),
+      title: '',
+      description: '',
+      actions: [],
+    };
+    updateDraft({ choices: [...draft.choices, newChoice] });
+  };
+
+  const updateChoice = (index: number, updates: Partial<ProposalChoice>) => {
+    const newChoices = [...draft.choices];
+    newChoices[index] = { ...newChoices[index], ...updates };
+    updateDraft({ choices: newChoices });
+  };
+
+  const removeChoice = (index: number) => {
+    const newChoices = draft.choices.filter((_, i) => i !== index);
+    updateDraft({ choices: newChoices });
+  };
+
+  const addChoiceAction = (choiceIndex: number, template?: ActionTemplate) => {
+    const newAction: ProposalAction = {
+      id: crypto.randomUUID(),
+      data: template?.defaultData || {},
+    };
+    const newChoices = [...draft.choices];
+    newChoices[choiceIndex].actions = [...newChoices[choiceIndex].actions, newAction];
+    updateDraft({ choices: newChoices });
+  };
+
+  const updateChoiceAction = (choiceIndex: number, actionIndex: number, action: ProposalAction) => {
+    const newChoices = [...draft.choices];
+    newChoices[choiceIndex].actions[actionIndex] = action;
+    updateDraft({ choices: newChoices });
+  };
+
+  const removeChoiceAction = (choiceIndex: number, actionIndex: number) => {
+    const newChoices = [...draft.choices];
+    newChoices[choiceIndex].actions = newChoices[choiceIndex].actions.filter(
+      (_, i) => i !== actionIndex,
+    );
+    updateDraft({ choices: newChoices });
+  };
+
+  const duplicateChoiceAction = (choiceIndex: number, actionIndex: number) => {
+    const newChoices = [...draft.choices];
+    const actionToDuplicate = newChoices[choiceIndex].actions[actionIndex];
+    const newAction: ProposalAction = {
+      ...JSON.parse(JSON.stringify(actionToDuplicate)),
+      id: crypto.randomUUID(),
+    };
+    newChoices[choiceIndex].actions.splice(actionIndex + 1, 0, newAction);
+    updateDraft({ choices: newChoices });
+  };
+
+  const moveChoiceAction = (choiceIndex: number, actionIndex: number, direction: 'up' | 'down') => {
+    const newChoices = [...draft.choices];
+    const actions = newChoices[choiceIndex].actions;
+    if (
+      (direction === 'up' && actionIndex === 0) ||
+      (direction === 'down' && actionIndex === actions.length - 1)
+    ) {
+      return;
+    }
+    const targetIndex = direction === 'up' ? actionIndex - 1 : actionIndex + 1;
+    [actions[actionIndex], actions[targetIndex]] = [actions[targetIndex], actions[actionIndex]];
+    updateDraft({ choices: newChoices });
   };
 
   const handlePublish = async () => {
@@ -149,165 +278,314 @@ export function ProposalCreatePage() {
               Edit
             </TabsTrigger>
             <TabsTrigger value="preview" className="gap-2" size="sm">
-            <Eye className="h-4 w-4" />
-            Preview
-          </TabsTrigger>
-        </TabsList>
+              <Eye className="h-4 w-4" />
+              Preview
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="edit" className="mt-0 space-y-6">
-          {/* Basic Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title *</Label>
-                <Input
-                  id="title"
-                  value={draft.title}
-                  onChange={(e) => updateDraft({ title: e.target.value })}
-                  placeholder="Enter proposal title..."
-                />
-              </div>
+          <TabsContent value="edit" className="mt-0 space-y-6">
+            {/* Basic Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Basic Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    value={draft.title}
+                    onChange={(e) => updateDraft({ title: e.target.value })}
+                    placeholder="Enter proposal title..."
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <MarkdownEditor
-                  value={draft.description}
-                  onChange={(value) => updateDraft({ description: value })}
-                  placeholder="Enter proposal description (supports Markdown)..."
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <MarkdownEditor
+                    value={draft.description}
+                    onChange={(value) => updateDraft({ description: value })}
+                    placeholder="Enter proposal description (supports Markdown)..."
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="type">Proposal Type</Label>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      id="single"
-                      name="proposalType"
-                      value="single"
-                      checked={draft.proposalType === 'single'}
-                      onChange={(e) =>
-                        updateDraft({ proposalType: e.target.value as 'single' | 'multiple' })
-                      }
-                    />
-                    <Label htmlFor="single" className="cursor-pointer font-normal">
-                      Single Choice (A)
-                    </Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      id="multiple"
-                      name="proposalType"
-                      value="multiple"
-                      checked={draft.proposalType === 'multiple'}
-                      onChange={(e) =>
-                        updateDraft({ proposalType: e.target.value as 'single' | 'multiple' })
-                      }
-                      disabled
-                    />
-                    <Label
-                      htmlFor="multiple"
-                      className="cursor-not-allowed font-normal text-muted-foreground"
-                    >
-                      Multiple Choice (B) - Coming Soon
-                    </Label>
+                <div className="space-y-2">
+                  <Label htmlFor="type">Proposal Type</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="single"
+                        name="proposalType"
+                        value="single"
+                        checked={draft.proposalType === 'single'}
+                        onChange={(e) => {
+                          updateDraft({ proposalType: e.target.value as 'single' | 'multiple' });
+                          setSearchParams({ type: 'A' });
+                        }}
+                        disabled={!availableProposalTypes.single}
+                      />
+                      <Label
+                        htmlFor="single"
+                        className={
+                          availableProposalTypes.single
+                            ? 'cursor-pointer font-normal'
+                            : 'cursor-not-allowed font-normal text-muted-foreground'
+                        }
+                      >
+                        Single Choice (A){!availableProposalTypes.single && ' - Not Available'}
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        id="multiple"
+                        name="proposalType"
+                        value="multiple"
+                        checked={draft.proposalType === 'multiple'}
+                        onChange={(e) => {
+                          updateDraft({ proposalType: e.target.value as 'single' | 'multiple' });
+                          setSearchParams({ type: 'B' });
+                        }}
+                        disabled={!availableProposalTypes.multiple}
+                      />
+                      <Label
+                        htmlFor="multiple"
+                        className={
+                          availableProposalTypes.multiple
+                            ? 'cursor-pointer font-normal'
+                            : 'cursor-not-allowed font-normal text-muted-foreground'
+                        }
+                      >
+                        Multiple Choice (B){!availableProposalTypes.multiple && ' - Not Available'}
+                      </Label>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Actions */}
-          <div className="space-y-4">
+            {/* Actions or Choices based on proposal type */}
+            {draft.proposalType === 'single' ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Actions ({draft.actions.length})</h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setIsLibraryOpen(true)}
+                  >
+                    <Library className="h-4 w-4" />
+                    Action Library
+                  </Button>
+                </div>
+
+                {draft.actions.length === 0 ? (
+                  <Card>
+                    <CardContent className="text-center py-8 text-muted-foreground">
+                      <p className="mb-4">No actions added yet</p>
+                      <Button variant="outline" onClick={() => setIsLibraryOpen(true)}>
+                        Browse Action Library
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  draft.actions.map((action, index) => (
+                    <ActionEditor
+                      key={action.id}
+                      action={action}
+                      index={index}
+                      total={draft.actions.length}
+                      onUpdate={(updated) => updateAction(index, updated)}
+                      onRemove={() => removeAction(index)}
+                      onDuplicate={() => duplicateAction(index)}
+                      onMoveUp={() => moveAction(index, 'up')}
+                      onMoveDown={() => moveAction(index, 'down')}
+                      onAddActionAfter={() => {
+                        setInsertAfterIndex(index);
+                        setIsLibraryOpen(true);
+                      }}
+                    />
+                  ))
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Options ({draft.choices.length})</h2>
+                  <Button variant="outline" size="sm" className="gap-2" onClick={addChoice}>
+                    Add Option
+                  </Button>
+                </div>
+
+                {draft.choices.length === 0 ? (
+                  <Card>
+                    <CardContent className="text-center py-8 text-muted-foreground">
+                      <p className="mb-4">No options added yet</p>
+                      <Button variant="outline" onClick={addChoice}>
+                        Add Option
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  draft.choices.map((choice, choiceIndex) => (
+                    <Card key={choice.id}>
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Label>Option {choiceIndex + 1} Title *</Label>
+                            </div>
+                            <Input
+                              value={choice.title}
+                              onChange={(e) => updateChoice(choiceIndex, { title: e.target.value })}
+                              placeholder="Enter option title..."
+                            />
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeChoice(choiceIndex)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Description</Label>
+                          <MarkdownEditor
+                            value={choice.description}
+                            onChange={(value) => updateChoice(choiceIndex, { description: value })}
+                            placeholder="Enter option description..."
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label>Actions ({choice.actions.length})</Label>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-2"
+                              onClick={() => {
+                                setActiveChoiceIndex(choiceIndex);
+                                setIsLibraryOpen(true);
+                              }}
+                            >
+                              <Library className="h-4 w-4" />
+                              Add Action
+                            </Button>
+                          </div>
+
+                          {choice.actions.length === 0 ? (
+                            <div className="text-center py-4 text-sm text-muted-foreground border rounded-md">
+                              No actions for this option
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {choice.actions.map((action, actionIndex) => (
+                                <ActionEditor
+                                  key={action.id}
+                                  action={action}
+                                  index={actionIndex}
+                                  total={choice.actions.length}
+                                  onUpdate={(updated) =>
+                                    updateChoiceAction(choiceIndex, actionIndex, updated)
+                                  }
+                                  onRemove={() => removeChoiceAction(choiceIndex, actionIndex)}
+                                  onDuplicate={() =>
+                                    duplicateChoiceAction(choiceIndex, actionIndex)
+                                  }
+                                  onMoveUp={() => moveChoiceAction(choiceIndex, actionIndex, 'up')}
+                                  onMoveDown={() =>
+                                    moveChoiceAction(choiceIndex, actionIndex, 'down')
+                                  }
+                                  onAddActionAfter={() => {
+                                    setActiveChoiceIndex(choiceIndex);
+                                    setInsertAfterIndex(actionIndex);
+                                    setIsLibraryOpen(true);
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Publish Actions */}
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Actions ({draft.actions.length})</h2>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                onClick={() => setIsLibraryOpen(true)}
-              >
-                <Library className="h-4 w-4" />
-                Action Library
+              <Button variant="outline" onClick={handleClearDraft}>
+                Clear Draft
+              </Button>
+              <Button onClick={handlePublish} disabled={isPublishing} className="gap-2">
+                {isPublishing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Publishing...
+                  </>
+                ) : (
+                  'Publish Proposal'
+                )}
               </Button>
             </div>
+          </TabsContent>
 
-            {draft.actions.length === 0 ? (
-              <Card>
-                <CardContent className="text-center py-8 text-muted-foreground">
-                  <p className="mb-4">No actions added yet</p>
-                  <Button variant="outline" onClick={() => setIsLibraryOpen(true)}>
-                    Browse Action Library
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              draft.actions.map((action, index) => (
-                <ActionEditor
-                  key={action.id}
-                  action={action}
-                  index={index}
-                  total={draft.actions.length}
-                  onUpdate={(updated) => updateAction(index, updated)}
-                  onRemove={() => removeAction(index)}
-                  onDuplicate={() => duplicateAction(index)}
-                  onMoveUp={() => moveAction(index, 'up')}
-                  onMoveDown={() => moveAction(index, 'down')}
-                />
-              ))
-            )}
-          </div>
+          <TabsContent value="preview" className="mt-0">
+            <ProposalPreview
+              title={draft.title}
+              description={draft.description}
+              proposalType={draft.proposalType}
+              actions={draft.actions.map((a) => a.data)}
+              choices={draft.choices}
+            />
 
-          {/* Publish Actions */}
-          <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={handleClearDraft}>
-              Clear Draft
-            </Button>
-            <Button onClick={handlePublish} disabled={isPublishing} className="gap-2">
-              {isPublishing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Publishing...
-                </>
-              ) : (
-                'Publish Proposal'
-              )}
-            </Button>
-          </div>
-        </TabsContent>
+            <div className="mt-6 flex justify-end">
+              <Button onClick={handlePublish} disabled={isPublishing} className="gap-2">
+                {isPublishing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Publishing...
+                  </>
+                ) : (
+                  'Publish Proposal'
+                )}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
 
-        <TabsContent value="preview" className="mt-0">
-          <ProposalPreview
-            title={draft.title}
-            description={draft.description}
-            actions={draft.actions.map((a) => a.data)}
-          />
-
-          <div className="mt-6 flex justify-end">
-            <Button onClick={handlePublish} disabled={isPublishing} className="gap-2">
-              {isPublishing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Publishing...
-                </>
-              ) : (
-                'Publish Proposal'
-              )}
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      <ActionLibraryModal
-        open={isLibraryOpen}
-        onOpenChange={setIsLibraryOpen}
-        onSelectTemplate={(template) => addAction(template)}
-      />
+        <ActionLibraryModal
+          open={isLibraryOpen}
+          onOpenChange={(open) => {
+            setIsLibraryOpen(open);
+            if (!open) {
+              setInsertAfterIndex(null);
+              setActiveChoiceIndex(null);
+            }
+          }}
+          onSelectTemplate={(template) => {
+            if (draft.proposalType === 'single') {
+              if (insertAfterIndex !== null) {
+                insertActionAfter(insertAfterIndex, template);
+                setInsertAfterIndex(null);
+              } else {
+                addAction(template);
+              }
+            } else if (activeChoiceIndex !== null) {
+              addChoiceAction(activeChoiceIndex, template);
+              setActiveChoiceIndex(null);
+              setInsertAfterIndex(null);
+            }
+          }}
+        />
       </div>
     </ProposalFormProvider>
   );

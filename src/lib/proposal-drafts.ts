@@ -7,11 +7,21 @@ export interface ProposalAction {
   data: any; // The actual Cosmos message
 }
 
+export interface ProposalChoice {
+  id: string;
+  title: string;
+  description: string;
+  actions: ProposalAction[];
+}
+
 export interface ProposalDraft {
   title: string;
   description: string;
   proposalType: 'single' | 'multiple';
+  // For single choice proposals
   actions: ProposalAction[];
+  // For multiple choice proposals
+  choices: ProposalChoice[];
   lastModified: number;
 }
 
@@ -126,6 +136,7 @@ export function getEmptyDraft(): ProposalDraft {
     description: '',
     proposalType: 'single',
     actions: [],
+    choices: [],
     lastModified: Date.now(),
   };
 }

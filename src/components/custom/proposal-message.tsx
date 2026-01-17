@@ -1,36 +1,12 @@
-import { AddressLink } from '@/components/ui/address-link';
-import { AmountDisplay } from '@/components/ui/amount-display';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { JsonViewer } from '@/components/ui/json-viewer';
 import { Switch } from '@/components/ui/switch';
-import { fromBaseUnits } from '@/hooks';
-import { usePrices } from '@/hooks/usePrices';
+import { actionRegistry } from '@/lib/action-types';
 import { useTheme } from '@/lib/useTheme';
-import { ChevronDown, ChevronRight, Code2, FileText, Send } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ReactNode, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
-
-// Type guards for message types
-type BankSendMsg = {
-  bank: {
-    send: {
-      to_address: string;
-      amount: Array<{ denom: string; amount: string }>;
-    };
-  };
-};
-
-type WasmExecuteMsg = {
-  wasm: {
-    execute: {
-      contract_addr: string;
-      funds: any[];
-      msg: string;
-    };
-  };
-};
 
 interface MessageTypeInfo {
   title: string;
@@ -56,7 +32,6 @@ export function ProposalMessage({
   const [showRaw, setShowRaw] = useState(false);
   const [internalExpanded, setInternalExpanded] = useState(false);
   const { theme } = useTheme();
-  const { getPrice } = usePrices();
 
   const expanded = controlledExpanded !== undefined ? controlledExpanded : internalExpanded;
 
@@ -71,69 +46,17 @@ export function ProposalMessage({
 
   const syntaxTheme = theme === 'dark' ? oneDark : oneLight;
 
-  // Type guard functions
-  const isBankSend = (data: any): data is BankSendMsg => {
-    return data?.bank?.send !== undefined;
-  };
-
-  const isWasmExecute = (data: any): data is WasmExecuteMsg => {
-    return data?.wasm?.execute !== undefined;
-  };
+  // Find the matching action type from the registry
+  const actionType = actionRegistry.match(message);
 
   const getMessageType = (): MessageTypeInfo => {
-    // Bank Send
-    if (isBankSend(message)) {
-      const { to_address, amount } = message.bank.send;
-      const coin = amount[0];
-      if (!coin) {
-        return {
-          title: 'Bank Send',
-          icon: Send,
-          expandable: false,
-        };
-      }
-
-      const priceData = getPrice(coin.denom);
-      const displayAmount = priceData
-        ? fromBaseUnits(coin.amount, priceData.decimals)
-        : coin.amount;
-      const displayDenom = priceData?.display || coin.denom;
-
+    if (actionType) {
+      const subtitle = actionType.getSubtitle ? actionType.getSubtitle(message) : undefined;
       return {
-        title: 'Bank Send',
-        subtitle: (
-          <div className="flex gap-1">
-            {displayAmount} {displayDenom} to <AddressLink address={to_address} />
-          </div>
-        ),
-        icon: Send,
-        expandable: false,
-      };
-    }
-
-    // Wasm Execute
-    if (isWasmExecute(message)) {
-      let actionName = '';
-      let decodedMsg;
-
-      try {
-        const decoded = atob(message.wasm.execute.msg);
-        decodedMsg = JSON.parse(decoded);
-        const firstKey = Object.keys(decodedMsg)[0];
-
-        if (firstKey) {
-          actionName = toTitleCase(firstKey);
-        }
-      } catch (e) {
-        // Ignore errors
-      }
-
-      return {
-        title: 'Execute Smart Contract',
-        subtitle: actionName,
-        icon: Code2,
-        expandable: true,
-        data: { decodedMsg },
+        title: actionType.getTitle(message),
+        subtitle,
+        icon: actionType.icon,
+        expandable: actionType.expandable,
       };
     }
 
@@ -149,76 +72,11 @@ export function ProposalMessage({
 
   const messageType = getMessageType();
 
-  const renderWasmExecute = (wasmMsg: any, decodedMsg?: any) => {
-    const { contract_addr, msg, funds } = wasmMsg.execute || wasmMsg;
-
-    // Decode base64 message if not already decoded
-    if (!decodedMsg) {
-      try {
-        const decoded = atob(msg);
-        decodedMsg = JSON.parse(decoded);
-      } catch (e) {
-        decodedMsg = { error: 'Failed to decode message', raw: msg };
-      }
-    }
-
-    // Check if this is an increase_allowance message
-    const isIncreaseAllowance = decodedMsg.increase_allowance;
-    const tokenInfo = isIncreaseAllowance ? getPrice(contract_addr) : null;
-
-    return (
-      <div className="space-y-4">
-        <div className="space-y-3">
-          <div>
-            <div className="text-sm font-medium text-muted-foreground mb-1">Contract</div>
-            {tokenInfo ? (
-              <div className="flex items-center gap-2">
-                <AddressLink address={contract_addr} short={false} />
-                <span className="text-sm text-muted-foreground">({tokenInfo.display})</span>
-              </div>
-            ) : (
-              <AddressLink address={contract_addr} short={false} />
-            )}
-          </div>
-
-          {isIncreaseAllowance && decodedMsg.increase_allowance.amount && (
-            <div>
-              <div className="text-sm font-medium text-muted-foreground mb-2">Allowed Funds</div>
-              <div className="space-y-2">
-                <AmountDisplay
-                  amount={decodedMsg.increase_allowance.amount}
-                  denom={contract_addr}
-                />
-              </div>
-            </div>
-          )}
-
-          {funds && funds.length > 0 && (
-            <div>
-              <div className="text-sm font-medium text-muted-foreground mb-2">Funds</div>
-              <div className="space-y-2">
-                {funds.map((fund: any, idx: number) => (
-                  <AmountDisplay key={idx} amount={fund.amount} denom={fund.denom} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div>
-            <div className="text-sm font-medium text-muted-foreground mb-2">Message</div>
-            <div className="overflow-hidden rounded-lg border">
-              <JsonViewer data={decodedMsg} />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderParsed = () => {
-    // Check if it's a wasm execute message
-    if (isWasmExecute(message)) {
-      return renderWasmExecute(message.wasm, messageType.data?.decodedMsg);
+    // If action type has a ViewComponent, use it
+    if (actionType?.ViewComponent) {
+      const ViewComponent = actionType.ViewComponent;
+      return <ViewComponent data={message} />;
     }
 
     // Fallback: show raw JSON for unsupported types

@@ -447,7 +447,7 @@ export const areNumbersClose = (num1: number, num2: number, tolerance: number = 
 };
 
 export const isCw20 = (denom: string) => {
-  return denom.startsWith('terra') || denom.startsWith('neutron');
+  return denom.startsWith('terra');
 };
 export const getAssetInfoOld = (denom: string) => {
   if (isCw20(denom)) {

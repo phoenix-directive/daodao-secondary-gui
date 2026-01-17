@@ -1,21 +1,33 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TrendingUp } from 'lucide-react';
+import { ActionType } from '../action-registry';
 
-interface StakingDelegateFormProps {
-  data: {
-    stargate: {
-      typeUrl: '/cosmos.staking.v1beta1.MsgDelegate';
-      value: {
-        delegatorAddress: string;
-        validatorAddress: string;
-        amount: { denom: string; amount: string };
-      };
+// Type definition for Staking Delegate message
+export type StakingDelegateMsg = {
+  stargate: {
+    typeUrl: '/cosmos.staking.v1beta1.MsgDelegate';
+    value: {
+      delegatorAddress: string;
+      validatorAddress: string;
+      amount: { denom: string; amount: string };
     };
   };
-  onUpdate: (path: string[], value: any) => void;
-}
+};
 
-export function StakingDelegateForm({ data, onUpdate }: StakingDelegateFormProps) {
+// Type guard
+const isStakingDelegate = (data: any): data is StakingDelegateMsg => {
+  return data?.stargate?.typeUrl === '/cosmos.staking.v1beta1.MsgDelegate';
+};
+
+// Form component
+function StakingDelegateForm({
+  data,
+  onUpdate,
+}: {
+  data: StakingDelegateMsg;
+  onUpdate: (path: string[], value: any) => void;
+}) {
   const value = data.stargate.value;
 
   return (
@@ -63,3 +75,14 @@ export function StakingDelegateForm({ data, onUpdate }: StakingDelegateFormProps
     </div>
   );
 }
+
+// Export the action type configuration
+export const StakingDelegateActionType: ActionType<StakingDelegateMsg> = {
+  id: 'staking_delegate',
+  name: 'Delegate Stake',
+  icon: TrendingUp,
+  guard: isStakingDelegate,
+  getTitle: () => 'Delegate Stake',
+  expandable: false,
+  FormEditor: StakingDelegateForm,
+};

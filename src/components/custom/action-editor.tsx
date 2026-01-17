@@ -2,19 +2,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { detectMessageType, ProposalAction } from '@/lib/proposal-drafts';
-import { ArrowDown, ArrowUp, Code2, Copy, Eye, X } from 'lucide-react';
+import { actionRegistry } from '@/lib/action-types';
+import { ProposalAction } from '@/lib/proposal-drafts';
+import { ArrowDown, ArrowUp, Code2, Copy, Eye, Plus, X } from 'lucide-react';
 import { useState } from 'react';
-import {
-  BankSendForm,
-  CW20SendForm,
-  GovVoteForm,
-  StakingDelegateForm,
-  StakingUndelegateForm,
-  StargateGovVoteForm,
-  WasmExecuteForm,
-  WasmUpdateAdminForm,
-} from './action-forms';
 
 interface ActionEditorProps {
   action: ProposalAction;
@@ -25,6 +16,7 @@ interface ActionEditorProps {
   onDuplicate: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onAddActionAfter: () => void;
 }
 
 export function ActionEditor({
@@ -36,12 +28,15 @@ export function ActionEditor({
   onDuplicate,
   onMoveUp,
   onMoveDown,
+  onAddActionAfter,
 }: ActionEditorProps) {
   const [jsonString, setJsonString] = useState(() => JSON.stringify(action.data, null, 2));
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'form' | 'json'>('form');
 
-  const messageInfo = detectMessageType(action.data);
+  // Find the matching action type from the registry
+  const actionType = actionRegistry.match(action.data);
+  const messageInfo = actionRegistry.detectMessageType(action.data);
 
   const handleJsonChange = (value: string) => {
     setJsonString(value);
@@ -68,161 +63,11 @@ export function ActionEditor({
     setJsonString(JSON.stringify(updated, null, 2));
   };
 
-  // Type guards for message types
-  type BankSendMsg = {
-    bank: {
-      send: {
-        to_address: string;
-        amount: Array<{ denom: string; amount: string }>;
-      };
-    };
-  };
-
-  type CW20SendMsg = {
-    wasm: {
-      execute: {
-        contract_addr: string;
-        funds: any[];
-        msg: { transfer: { recipient: string; amount: string } };
-      };
-    };
-  };
-
-  type WasmExecuteMsg = {
-    wasm: {
-      execute: {
-        contract_addr: string;
-        funds: any[];
-        msg: any;
-      };
-    };
-  };
-
-  type WasmUpdateAdminMsg = {
-    wasm: {
-      update_admin: {
-        contract_addr: string;
-        admin: string;
-      };
-    };
-  };
-
-  type StargateStakingDelegateMsg = {
-    stargate: {
-      typeUrl: '/cosmos.staking.v1beta1.MsgDelegate';
-      value: {
-        delegatorAddress: string;
-        validatorAddress: string;
-        amount: { denom: string; amount: string };
-      };
-    };
-  };
-
-  type StargateStakingUndelegateMsg = {
-    stargate: {
-      typeUrl: '/cosmos.staking.v1beta1.MsgUndelegate';
-      value: {
-        delegatorAddress: string;
-        validatorAddress: string;
-        amount: { denom: string; amount: string };
-      };
-    };
-  };
-
-  type GovVoteMsg = {
-    gov: {
-      vote: {
-        proposal_id: number;
-        vote: 'yes' | 'no' | 'abstain' | 'no_with_veto';
-      };
-    };
-  };
-
-  type StargateGovVoteMsg = {
-    stargate: {
-      typeUrl: '/cosmos.gov.v1beta1.MsgVote' | '/cosmos.gov.v1.MsgVote';
-      value: {
-        proposalId: string;
-        voter: string;
-        option: number;
-      };
-    };
-  };
-
-  const isBankSend = (data: any): data is BankSendMsg => {
-    return data?.bank?.send !== undefined;
-  };
-
-  const isCW20Send = (data: any): data is CW20SendMsg => {
-    return data?.wasm?.execute?.msg?.transfer !== undefined;
-  };
-
-  const isWasmExecute = (data: any): data is WasmExecuteMsg => {
-    return data?.wasm?.execute !== undefined && !data.wasm.execute.msg?.transfer;
-  };
-
-  const isWasmUpdateAdmin = (data: any): data is WasmUpdateAdminMsg => {
-    return data?.wasm?.update_admin !== undefined;
-  };
-
-  const isStargateStakingDelegate = (data: any): data is StargateStakingDelegateMsg => {
-    return data?.stargate?.typeUrl === '/cosmos.staking.v1beta1.MsgDelegate';
-  };
-
-  const isStargateStakingUndelegate = (data: any): data is StargateStakingUndelegateMsg => {
-    return data?.stargate?.typeUrl === '/cosmos.staking.v1beta1.MsgUndelegate';
-  };
-
-  const isGovVote = (data: any): data is GovVoteMsg => {
-    return data?.gov?.vote !== undefined;
-  };
-
-  const isStargateGovVote = (data: any): data is StargateGovVoteMsg => {
-    return (
-      data?.stargate?.typeUrl === '/cosmos.gov.v1beta1.MsgVote' ||
-      data?.stargate?.typeUrl === '/cosmos.gov.v1.MsgVote'
-    );
-  };
-
   const renderFormEditor = () => {
-    // Bank Send
-    if (isBankSend(action.data)) {
-      return <BankSendForm data={action.data} onUpdate={updateField} />;
-    }
-
-    // CW20 Send
-    if (isCW20Send(action.data)) {
-      return <CW20SendForm data={action.data} onUpdate={updateField} />;
-    }
-
-    // Staking Delegate (Stargate)
-    if (isStargateStakingDelegate(action.data)) {
-      return <StakingDelegateForm data={action.data} onUpdate={updateField} />;
-    }
-
-    // Staking Undelegate (Stargate)
-    if (isStargateStakingUndelegate(action.data)) {
-      return <StakingUndelegateForm data={action.data} onUpdate={updateField} />;
-    }
-
-    // Governance Vote
-    if (isGovVote(action.data)) {
-      return <GovVoteForm data={action.data} onUpdate={updateField} />;
-    }
-
-    // Governance Vote (Stargate - for backwards compatibility)
-    if (isStargateGovVote(action.data)) {
-      return <StargateGovVoteForm data={action.data} onUpdate={updateField} />;
-    }
-
-    // CosmWasm Execute (generic)
-    if (isWasmExecute(action.data)) {
-      return <WasmExecuteForm data={action.data} onUpdate={updateField} />;
-    }
-
-    // Update Admin
-    if (isWasmUpdateAdmin(action.data)) {
-      return <WasmUpdateAdminForm data={action.data} onUpdate={updateField} />;
+    // If we found a matching action type, use its FormEditor
+    if (actionType) {
+      const FormEditor = actionType.FormEditor;
+      return <FormEditor data={action.data} onUpdate={updateField} />;
     }
 
     // Unknown message type - show notice to use JSON tab
@@ -308,6 +153,10 @@ export function ActionEditor({
             Move Down
           </Button>
         </div>
+        <Button variant="outline" size="sm" onClick={onAddActionAfter} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Add Action
+        </Button>
       </CardFooter>
     </Card>
   );
