@@ -331,11 +331,13 @@ const AppIframeInner = forwardRef<AppIframeRef, AppIframeProps>(
 
     // Message handler for iframe communication
     useEffect(() => {
+      console.log('Setup received message');
       if (!iframe?.contentWindow) {
         return;
       }
 
       const listener = ({ data }: MessageEvent) => {
+        console.log('AppIframe received message:', data);
         if (data === 'isDaoDao') {
           iframe.contentWindow?.postMessage('amDaoDao');
         }
