@@ -1,31 +1,68 @@
-import { Card, CardContent } from '@/components/ui/card'
+import { AppPicker, DappComponent } from '@/components/custom/apps';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useDaoDaoState } from '@/hooks/useDaoDao';
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 export function AppsTab() {
-  return (
-    <Card>
-      <CardContent className="p-8">
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="mb-4 rounded-full bg-primary/10 p-4">
-            <svg
-              className="h-8 w-8 text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-              />
-            </svg>
+  const [fullScreen, setFullScreen] = useState(false);
+  const [url, setUrl] = useState('');
+  const [name, setName] = useState('');
+
+  const { address: daoAddress } = useParams<{ address: string }>();
+  const daoState = useDaoDaoState(daoAddress);
+  const daoData = daoState.data.value ?? undefined;
+
+  if (daoState.loading.value || !daoData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Apps</CardTitle>
+        </CardHeader>
+        <CardContent className="p-8">
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-sm text-muted-foreground">Loading apps...</p>
           </div>
-          <h3 className="mb-2 text-lg font-semibold">Apps</h3>
-          <p className="text-sm text-muted-foreground">
-            Apps content coming soon...
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  )
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <Card className="flex-0 mb-6">
+        <CardHeader>
+          <CardTitle>Apps</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* <AppRenderer
+            fullScreen={fullScreen}
+            onFullScreenChange={setFullScreen}
+            daoData={daoData}
+          /> */}
+
+          <AppPicker
+            url={url}
+            onOpenApp={(newUrl, name) => {
+              console.log('🚀 ~ AppsTab ~ newUrl:', newUrl);
+              setUrl(newUrl);
+              setName(name);
+            }}
+            daoData={daoData}
+          />
+        </CardContent>
+      </Card>
+
+      {url && (
+        <DappComponent
+          className="w-full h-full min-h-300 flex-1"
+          src={url}
+          name={name ?? url}
+          daoData={daoData}
+        />
+      )}
+    </>
+  );
 }

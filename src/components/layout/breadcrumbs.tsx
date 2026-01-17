@@ -10,7 +10,6 @@ interface BreadcrumbItem {
 export function Breadcrumbs() {
   const location = useLocation();
   const path = location.pathname;
-  console.log('🚀 ~ Breadcrumbs ~ path:', path);
 
   // Parse path manually since useParams doesn't work outside Routes
   // Match patterns: /dao/:address or /dao/:address/:tab or /dao/:address/proposals/:proposalId or /dao/:address/proposals/create

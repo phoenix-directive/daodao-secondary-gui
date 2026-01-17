@@ -1,5 +1,5 @@
 export const useLocalhost = import.meta.env.VITE_USE_LOCALHOST_BACKEND === '1';
-const isLocalhost = window.location.hostname === 'localhost';
+export const isLocalhost = window.location.hostname === 'localhost';
 
 const forceShowTeaser = false;
 // Check if we should show the teaser page

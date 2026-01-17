@@ -39,15 +39,15 @@ export interface DaoDaoDumpState {
   total_proposal_module_count: number;
 }
 
-export interface DaoDaoStateResponse {
-  data: DaoDaoDumpState;
+export type DaoDaoStateResponse = DaoDaoDumpState & {
   _computed: {
+    address: string;
     availableProposalTypes: {
       single: boolean;
       multiple: boolean;
     };
   };
-}
+};
 
 /**
  * Query DAO DAO contract for its current state
@@ -75,12 +75,13 @@ export const useDaoDaoState = (contractAddress: string | undefined) => {
     return {
       ...result,
       _computed: {
+        address: contractAddress,
         availableProposalTypes: {
           single: hasSingleChoice,
           multiple: hasMultipleChoice,
         },
       },
-    };
+    } as DaoDaoStateResponse;
   }, [contractAddress, globalReload.value]);
 };
 

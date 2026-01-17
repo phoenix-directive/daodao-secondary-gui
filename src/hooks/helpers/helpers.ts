@@ -693,3 +693,5 @@ export const getIpfsLink = (ipfs: string | null | undefined, sourceSize: 0 | 160
     fallbackSrc: `${globalConfig.nftEndpoint}/api/ipfs/${encodeURIComponent(cid ?? '')}`,
   };
 };
+
+export const EMPTY_PUB_KEY = new Uint8Array([0x02, ...[...new Array(32)].map(() => 0)]);

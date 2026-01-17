@@ -59,7 +59,11 @@ export function ProposalPreview({
                   >
                     Expand All
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setExpandedMessages(new Set())}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExpandedMessages(new Set())}
+                  >
                     Collapse All
                   </Button>
                 </div>
@@ -112,7 +116,7 @@ export function ProposalPreview({
                         </ReactMarkdown>
                       </div>
                     )}
-                    
+
                     {choice.actions && choice.actions.length > 0 ? (
                       <div className="space-y-2">
                         <h3 className="text-sm font-semibold">Actions ({choice.actions.length})</h3>
@@ -136,7 +140,9 @@ export function ProposalPreview({
                         ))}
                       </div>
                     ) : (
-                      <div className="text-sm text-muted-foreground italic">No actions for this option</div>
+                      <div className="text-sm text-muted-foreground italic">
+                        No actions for this option
+                      </div>
                     )}
                   </CardContent>
                 </Card>

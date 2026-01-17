@@ -126,7 +126,13 @@ export function DaoPage() {
                         onClick={handleToggleFavorite}
                         className="h-9 w-9"
                       >
-                        <Star className={`h-5 w-5 ${isCurrentlyFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                        <Star
+                          className={`h-5 w-5 ${
+                            isCurrentlyFavorite
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-muted-foreground'
+                          }`}
+                        />
                       </Button>
                     </div>
                   </div>
@@ -165,7 +171,7 @@ export function DaoPage() {
               <MembersTab />
             </TabsContent>
 
-            <TabsContent value="apps" className="mt-0 flex-1">
+            <TabsContent value="apps" className="mt-0 flex-1 flex flex-col">
               <AppsTab />
             </TabsContent>
           </div>

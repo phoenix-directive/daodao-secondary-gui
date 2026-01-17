@@ -58,7 +58,6 @@ export function TreasuryTab({ daoAddress, daoName }: TreasuryTabProps) {
   // Reload iframe when theme changes
   useEffect(() => {
     const iframe = document.getElementById('treasury-widget') as HTMLIFrameElement;
-    console.log('🚀 ~ TreasuryTab ~ widgetUrl:', widgetUrl);
     if (iframe && widgetUrl) {
       iframe.src = widgetUrl;
     }
