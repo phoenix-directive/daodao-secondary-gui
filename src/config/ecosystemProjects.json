@@ -144,7 +144,7 @@
         "status": "open",
         "thumbnail": "ignite",
         "link": "https://www.boostdao.io/ignite/permissionless-terra",
-        "app": false,
+        "app": true,
         "social": {
             "webSite": "https://www.boostdao.io/",
             "twitter": "https://x.com/Boost_DAO",
