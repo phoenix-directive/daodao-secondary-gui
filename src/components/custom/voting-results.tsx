@@ -26,16 +26,20 @@ function AbsolutePercentageThreshold({
   threshold,
   yesVotes,
   noVotes,
+  turnoutVotes,
+  totalPower,
 }: {
   threshold: Threshold;
   yesVotes: number;
   noVotes: number;
+  turnoutVotes: number;
+  totalPower: number;
 }) {
   if (!('absolute_percentage' in threshold)) return null;
 
   const pct = threshold.absolute_percentage.percentage;
   const totalVotes = yesVotes + noVotes;
-  const yesPercent = totalVotes > 0 ? yesVotes / totalVotes : 0;
+  const yesPercent = totalVotes > 0 ? yesVotes / totalPower : 0;
 
   let displayValue: string;
   let isPassing: boolean;
@@ -208,7 +212,13 @@ function ThresholdDisplay({
 }: ThresholdDisplayProps) {
   if ('absolute_percentage' in threshold) {
     return (
-      <AbsolutePercentageThreshold threshold={threshold} yesVotes={yesVotes} noVotes={noVotes} />
+      <AbsolutePercentageThreshold
+        threshold={threshold}
+        yesVotes={yesVotes}
+        noVotes={noVotes}
+        turnoutVotes={turnoutVotes}
+        totalPower={totalPower}
+      />
     );
   }
 
@@ -239,11 +249,23 @@ export function VotingResults({ votes, totalPower, threshold }: VotingResultsPro
   const total = toNumb(totalPower);
   const turnout = yes + no + abstain;
 
-  const yesPercent = getPercent(yes, turnout);
-  const noPercent = getPercent(no, turnout);
-  const noPercentReal = getPercent(no, no + yes);
-  const yesPercentReal = getPercent(yes, no + yes);
-  const abstainPercent = getPercent(abstain, turnout);
+  let yesPercent = getPercent(yes, turnout);
+  let noPercent = getPercent(no, turnout);
+
+  let noPercentReal = getPercent(no, no + yes);
+  let yesPercentReal = getPercent(yes, no + yes);
+  let abstainPercent = getPercent(abstain, turnout);
+
+  console.log('🚀 ~ VotingResults ~ threshold: xxxx', threshold);
+
+  if ('absolute_percentage' in threshold || 'absolute_count' in threshold) {
+    yesPercent = getPercent(yes, total);
+    noPercent = getPercent(no, total);
+
+    noPercentReal = getPercent(no, total);
+    yesPercentReal = getPercent(yes, total);
+    abstainPercent = getPercent(abstain, total);
+  }
 
   return (
     <Card>
