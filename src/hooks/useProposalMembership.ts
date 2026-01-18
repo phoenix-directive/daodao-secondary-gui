@@ -39,23 +39,12 @@ export const useProposalMembership = (
           },
           1440,
         ),
-        allowRevoting
-          ? chain.read.query<VoteResponse>(proposalModuleAddress, {
-              get_vote: {
-                proposal_id: proposalId,
-                voter: address,
-              },
-            })
-          : chain.read.queryCached<VoteResponse>(
-              proposalModuleAddress,
-              {
-                get_vote: {
-                  proposal_id: proposalId,
-                  voter: address,
-                },
-              },
-              1440,
-            ),
+        chain.read.query<VoteResponse>(proposalModuleAddress, {
+          get_vote: {
+            proposal_id: proposalId,
+            voter: address,
+          },
+        }),
       ]);
 
       const votingPower = powerResult.status === 'fulfilled' ? powerResult.value.power : '0';
