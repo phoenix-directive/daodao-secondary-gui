@@ -86,7 +86,6 @@ export function AppMessagesModal({
                 <ProposalMessage
                   key={action.id}
                   message={action.data}
-                  index={index}
                   expanded={expandedMessages.has(index)}
                   onToggleExpanded={(isExpanded) => {
                     const newExpanded = new Set(expandedMessages);

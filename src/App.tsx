@@ -23,7 +23,7 @@ if (import.meta.hot) {
 
 function AppContent() {
   const { theme } = useTheme();
-  
+
   return (
     <>
       <ShuttleProvider
@@ -49,13 +49,13 @@ function AppContent() {
           </BrowserRouter>
         </ModalServiceProvider>
       </ShuttleProvider>
-      <Toaster 
-        position="top-right" 
+      <Toaster
+        position="top-right"
         theme={theme === 'system' ? 'system' : theme}
-        richColors 
-        closeButton 
-        expand 
-        visibleToasts={5} 
+        richColors
+        closeButton
+        expand
+        visibleToasts={5}
       />
     </>
   );

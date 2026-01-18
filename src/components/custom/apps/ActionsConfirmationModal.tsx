@@ -41,7 +41,6 @@ export function ActionsConfirmationModal({
             <ProposalMessage
               key={action.id}
               message={action.data}
-              index={index}
               expanded={true}
               onToggleExpanded={() => {}}
             />
