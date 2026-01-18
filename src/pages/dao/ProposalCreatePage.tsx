@@ -304,7 +304,19 @@ export function ProposalCreatePage() {
     if (!prefillParam || !daoAddress) return;
 
     try {
-      const prefillData = JSON.parse(prefillParam) as PrefillData;
+      // Check if it's base64 encoded (try to decode, if it fails, treat as regular JSON)
+      let decodedParam = prefillParam;
+      try {
+        // Test if it's valid base64 by trying to decode
+        const decoded = atob(prefillParam);
+        // If successful, use the decoded version
+        decodedParam = decoded;
+      } catch {
+        // Not base64, use as-is (URL-encoded JSON)
+        decodedParam = prefillParam;
+      }
+
+      const prefillData = JSON.parse(decodedParam) as PrefillData;
 
       // Validate it's a DaoProposalSingle format
       if (prefillData.id !== 'DaoProposalSingle' || !prefillData.data) {
