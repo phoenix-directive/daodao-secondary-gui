@@ -75,6 +75,7 @@ function prepareMessage(
     ],
     ['Query failed with (6): rpc error: code = Unknown desc = ', ''],
     ['Query failed with (6): ', ''],
+    ['Query failed with (18):', ''],
     ['dispatch: submessages: ', ''],
     ['failed to execute message;', ''],
     ['message index: 0: ', ''],

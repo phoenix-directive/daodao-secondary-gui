@@ -12,7 +12,7 @@ import { AppsTab } from '@/pages/dao/tabs/AppsTab';
 import { MembersTab } from '@/pages/dao/tabs/MembersTab';
 import { ProposalsTab } from '@/pages/dao/tabs/ProposalsTab';
 import { TreasuryTab } from '@/pages/dao/tabs/TreasuryTab';
-import { Loader2, Star } from 'lucide-react';
+import { Landmark, Loader2, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -25,6 +25,7 @@ export function DaoPage() {
   const daoState = useDaoDaoState(address);
   const daoData = daoState.data.value;
   const isLoading = daoState.loading.value;
+  const error = daoState.error.value;
 
   const daoName = daoData?.config.name || 'DAO';
   const daoDescription = daoData?.config.description || '';
@@ -88,8 +89,38 @@ export function DaoPage() {
           </Card>
         )}
 
+        {/* Error State - DAO Not Found */}
+        {!isLoading && (error || !daoData) && (
+          <Card className="mb-8 p-0 border-2 border-destructive/50">
+            <CardContent className="p-6 md:p-8">
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="mb-4 rounded-full bg-destructive/10 p-4">
+                  <Landmark className="h-12 w-12 text-destructive" />
+                </div>
+                <h2 className="mb-2 text-2xl font-bold">DAO Not Found</h2>
+                <p className="mb-4 text-muted-foreground max-w-md">
+                  {error
+                    ? `Unable to load DAO data: ${error}`
+                    : 'The DAO at this address could not be found or may not exist on this network.'}
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => navigate('/')}>
+                    Go Home
+                  </Button>
+                  <Button onClick={() => window.location.reload()}>Retry</Button>
+                </div>
+                {address && (
+                  <div className="mt-4 text-sm text-muted-foreground">
+                    <span className="font-mono">{address}</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* DAO Header */}
-        {!isLoading && daoData && (
+        {!isLoading && !error && daoData && (
           <Card className="mb-8 p-0 border-2">
             <CardContent className="p-6 md:p-8">
               <div className="flex flex-col gap-6 md:flex-row">
@@ -151,37 +182,39 @@ export function DaoPage() {
           </Card>
         )}
 
-        {/* Tabs Section */}
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabChange}
-          className="w-full flex flex-col flex-1"
-        >
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="proposals">Proposals</TabsTrigger>
-            <TabsTrigger value="treasury">Treasury</TabsTrigger>
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="apps">Apps</TabsTrigger>
-          </TabsList>
+        {/* Tabs Section - Only show if DAO loaded successfully */}
+        {!isLoading && !error && daoData && (
+          <Tabs
+            value={activeTab}
+            onValueChange={handleTabChange}
+            className="w-full flex flex-col flex-1"
+          >
+            <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+              <TabsTrigger value="proposals">Proposals</TabsTrigger>
+              <TabsTrigger value="treasury">Treasury</TabsTrigger>
+              <TabsTrigger value="members">Members</TabsTrigger>
+              <TabsTrigger value="apps">Apps</TabsTrigger>
+            </TabsList>
 
-          <div className="flex-1 flex flex-col">
-            <TabsContent value="proposals" className="mt-0 flex-1">
-              <ProposalsTab />
-            </TabsContent>
+            <div className="flex-1 flex flex-col">
+              <TabsContent value="proposals" className="mt-0 flex-1">
+                <ProposalsTab />
+              </TabsContent>
 
-            <TabsContent value="treasury" className="mt-0 flex-1 flex flex-col">
-              <TreasuryTab daoAddress={address} daoName={daoName} />
-            </TabsContent>
+              <TabsContent value="treasury" className="mt-0 flex-1 flex flex-col">
+                <TreasuryTab daoAddress={address} daoName={daoName} />
+              </TabsContent>
 
-            <TabsContent value="members" className="mt-0 flex-1">
-              <MembersTab />
-            </TabsContent>
+              <TabsContent value="members" className="mt-0 flex-1">
+                <MembersTab />
+              </TabsContent>
 
-            <TabsContent value="apps" className="mt-0 flex-1 flex flex-col">
-              <AppsTab />
-            </TabsContent>
-          </div>
-        </Tabs>
+              <TabsContent value="apps" className="mt-0 flex-1 flex flex-col">
+                <AppsTab />
+              </TabsContent>
+            </div>
+          </Tabs>
+        )}
       </div>
     </div>
   );
