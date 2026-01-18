@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { defineConfig, Plugin } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import svgr from 'vite-plugin-svgr';
 
@@ -18,15 +18,15 @@ function versionHashPlugin(): Plugin {
         hash,
         timestamp,
       };
-      
+
       const publicDir = path.resolve(__dirname, 'public');
       const versionFile = path.join(publicDir, 'version.json');
-      
+
       // Ensure public directory exists
       if (!fs.existsSync(publicDir)) {
         fs.mkdirSync(publicDir, { recursive: true });
       }
-      
+
       fs.writeFileSync(versionFile, JSON.stringify(versionInfo, null, 2));
       console.log(`[Version Hash] Generated: ${hash}`);
     },

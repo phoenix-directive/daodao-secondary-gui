@@ -24,7 +24,7 @@ if (import.meta.hot) {
 
 function AppContent() {
   const { theme } = useTheme();
-  
+
   // Check for new app versions periodically
   useVersionCheck();
 
