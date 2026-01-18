@@ -50,7 +50,7 @@ jobs:
           concurrency: '50' # Make sure to check the docs about concurrency before choosing this setting
           enable-delete-action: true
           enable-purge-pull-zone: true
-          pull-zone-id: '12345'
+          pull-zone-id: 'daodao-secondary'
           replication-timeout: '15000'
           request-timeout: '5000' # optional, defaults to 5000
           retry-limit: '3' # optional, defaults to 3
