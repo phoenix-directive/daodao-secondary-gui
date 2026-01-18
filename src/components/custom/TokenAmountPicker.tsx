@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { fromBaseUnits, toBaseUnits } from '@/hooks';
 import { Eye, Pencil, Trash } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export type CoinData = {
   denom: string;
@@ -209,7 +209,7 @@ export type TokenAmountWithMode = TokenAmount & {
 type MultiTokenAmountPickerProps = {
   values: TokenAmountWithMode[];
   availableCoins: CoinData[];
-  onChange: (values: TokenAmountWithMode[]) => void;
+  onChange: (values: TokenAmount[]) => void; // Output without mode
   addButtonLabel?: string;
   showMaxButton?: boolean;
 };
@@ -221,36 +221,60 @@ export function MultiTokenAmountPicker({
   addButtonLabel = '+ Add another coin',
   showMaxButton = true,
 }: MultiTokenAmountPickerProps) {
+  // Internal state to track modes
+  const [valueModes, setValueModes] = useState<('standard' | 'custom')[]>(() =>
+    values.map((v) => v.mode || 'standard')
+  );
+
+  // Sync modes when values change from outside
+  useEffect(() => {
+    setValueModes(values.map((v) => v.mode || 'standard'));
+  }, [values.length]);
+
+  const stripMode = (items: TokenAmountWithMode[]): TokenAmount[] => {
+    return items.map(({ denom, amount }) => ({ denom, amount }));
+  };
+
   const handleAdd = () => {
     const usedDenoms = values.map((v) => v.denom);
     const unusedCoins = availableCoins.filter((c) => !usedDenoms.includes(c.denom));
     if (unusedCoins.length > 0) {
-      onChange([...values, { denom: unusedCoins[0].denom, amount: '0', mode: 'standard' }]);
+      const newMode = 'standard';
+      setValueModes([...valueModes, newMode]);
+      onChange(stripMode([...values, { denom: unusedCoins[0].denom, amount: '0', mode: newMode }]));
     } else {
-      onChange([...values, { denom: '', amount: '0', mode: 'custom' }]);
+      const newMode = 'custom';
+      setValueModes([...valueModes, newMode]);
+      onChange(stripMode([...values, { denom: '', amount: '0', mode: newMode }]));
     }
   };
 
   const handleChange = (idx: number, newValue: TokenAmount) => {
     const newValues = [...values];
-    newValues[idx] = { ...newValue, mode: values[idx].mode };
-    onChange(newValues);
+    newValues[idx] = { ...newValue, mode: valueModes[idx] };
+    onChange(stripMode(newValues));
   };
 
   const handleModeChange = (idx: number, newMode: 'standard' | 'custom') => {
+    const newModes = [...valueModes];
+    newModes[idx] = newMode;
+    setValueModes(newModes);
     const newValues = [...values];
     newValues[idx] = { ...values[idx], mode: newMode };
-    onChange(newValues);
+    onChange(stripMode(newValues));
   };
 
   const handleRemove = (idx: number) => {
     const newValues = [...values];
     newValues.splice(idx, 1);
-    onChange(newValues);
+    const newModes = [...valueModes];
+    newModes.splice(idx, 1);
+    setValueModes(newModes);
+    onChange(stripMode(newValues));
   };
 
   const getAvailableCoinsForIndex = (idx: number) => {
-    const itemMode = values[idx].mode || 'standard';
+    const itemMode = valueModes[idx] || 'standard';
     if (itemMode === 'custom') return availableCoins;
     const usedDenoms = values
       .map((v, i) => (i !== idx ? v.denom : null))
@@ -273,7 +297,7 @@ export function MultiTokenAmountPicker({
             key={idx}
             value={value}
             availableCoins={getAvailableCoinsForIndex(idx)}
-            mode={value.mode}
+            mode={valueModes[idx]}
             onChange={(newValue) => handleChange(idx, newValue)}
             onModeChange={(newMode) => handleModeChange(idx, newMode)}
             onRemove={() => handleRemove(idx)}

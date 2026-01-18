@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   MultiTokenAmountPicker,
-  type TokenAmountWithMode,
+  type TokenAmount,
 } from '@/components/custom/TokenAmountPicker';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useProposalFormContext } from '@/lib/proposal-form-context';
@@ -32,7 +32,7 @@ export function WasmExecuteForm({
   // Use allCoins for the combined balances with prices
   const { allCoins } = useProposalFormContext();
 
-  const handleFundsChange = (newFunds: TokenAmountWithMode[]) => {
+  const handleFundsChange = (newFunds: TokenAmount[]) => {
     onUpdate(['wasm', 'execute', 'funds'], newFunds);
   };
 
