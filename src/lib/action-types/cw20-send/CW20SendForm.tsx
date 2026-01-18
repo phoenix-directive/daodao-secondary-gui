@@ -1,7 +1,4 @@
-import { AddressLink } from '@/components/ui/address-link';
-import { AmountDisplay } from '@/components/ui/amount-display';
 import { Input } from '@/components/ui/input';
-import { JsonViewer } from '@/components/ui/json-viewer';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -16,43 +13,10 @@ import { isCw20 } from '@/hooks/helpers/helpers';
 import { useChainByContractOptional } from '@/hooks/useChain';
 import { usePrices } from '@/hooks/usePrices';
 import { useProposalFormContext } from '@/lib/proposal-form-context';
-import { Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { ActionType } from '../action-registry';
+import type { CW20SendMsg, SendMessage } from './CW20SendAction';
 
-// Type definition for CW20 Send message (send to contract with message)
-export type CW20SendMsg = {
-  wasm: {
-    execute: {
-      contract_addr: string;
-      funds: any[];
-      msg: string; // base64 encoded JSON
-    };
-  };
-};
-
-// Decoded send message structure
-type SendMessage = {
-  send: {
-    contract: string;
-    amount: string;
-    msg: string; // nested base64 encoded message
-  };
-};
-
-// Type guard
-const isCW20Send = (data: any): data is CW20SendMsg => {
-  if (typeof data?.wasm?.execute?.msg !== 'string') return false;
-  try {
-    const decoded = JSON.parse(atob(data.wasm.execute.msg));
-    return decoded?.send !== undefined;
-  } catch {
-    return false;
-  }
-};
-
-// Form component
-function CW20SendForm({
+export function CW20SendForm({
   data,
   onUpdate,
   onUpdateMulti,
@@ -345,132 +309,3 @@ function CW20SendForm({
     </div>
   );
 }
-
-// View component for expanded view
-function CW20SendView({ data }: { data: CW20SendMsg }) {
-  const { contract_addr, msg } = data.wasm.execute;
-  const { getPrice } = usePrices();
-
-  // Decode outer message
-  let decodedMsg: SendMessage | null = null;
-  try {
-    decodedMsg = JSON.parse(atob(msg));
-  } catch (e) {
-    console.error('Failed to decode message:', e);
-  }
-
-  // Decode inner message
-  let innerMsg: any = {};
-  if (decodedMsg?.send?.msg) {
-    try {
-      innerMsg = JSON.parse(atob(decodedMsg.send.msg));
-    } catch (e) {
-      innerMsg = { error: 'Failed to decode inner message', raw: decodedMsg.send.msg };
-    }
-  }
-
-  const tokenInfo = getPrice(contract_addr);
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-3">
-        <div>
-          <div className="text-sm font-medium text-muted-foreground mb-1">Token Contract</div>
-          {tokenInfo ? (
-            <div className="flex items-center gap-2">
-              <AddressLink address={contract_addr} short={false} />
-              <span className="text-sm text-muted-foreground">({tokenInfo.display})</span>
-            </div>
-          ) : (
-            <AddressLink address={contract_addr} short={false} />
-          )}
-        </div>
-
-        {decodedMsg?.send?.amount && (
-          <div>
-            <div className="text-sm font-medium text-muted-foreground mb-2">Amount</div>
-            <AmountDisplay amount={decodedMsg.send.amount} denom={contract_addr} />
-          </div>
-        )}
-
-        {decodedMsg?.send?.contract && (
-          <div>
-            <div className="text-sm font-medium text-muted-foreground mb-1">Recipient Contract</div>
-            <AddressLink address={decodedMsg.send.contract} short={false} />
-          </div>
-        )}
-
-        {innerMsg && Object.keys(innerMsg).length > 0 && (
-          <div>
-            <div className="text-sm font-medium text-muted-foreground mb-2">Message</div>
-            <div className="overflow-hidden rounded-lg border">
-              <JsonViewer data={innerMsg} />
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Get subtitle for preview
-function getSubtitle(data: CW20SendMsg): React.ReactNode {
-  try {
-    const decoded = JSON.parse(atob(data.wasm.execute.msg));
-    if (!decoded?.send?.contract || !decoded?.send?.amount) {
-      return undefined;
-    }
-
-    const { contract_addr } = data.wasm.execute;
-    const { contract, amount, msg } = decoded.send;
-
-    // Decode inner message to get action name
-    let actionName = '';
-    if (msg) {
-      try {
-        const innerMsg = JSON.parse(atob(msg));
-        const firstKey = Object.keys(innerMsg)[0];
-        if (firstKey) {
-          actionName = firstKey
-            .split('_')
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-        }
-      } catch {
-        // Ignore if we can't decode
-      }
-    }
-
-    // Use a simple hook wrapper component to access usePrices
-    function SubtitleContent() {
-      const { getPrice } = usePrices();
-      const priceData = getPrice(contract_addr);
-      const displayAmount = priceData ? fromBaseUnits(amount, priceData.decimals) : amount;
-      const displayDenom = priceData?.display || contract_addr;
-
-      return (
-        <div className="flex gap-1">
-          {actionName && <span>{actionName} -</span>} {displayAmount} {displayDenom} to{' '}
-          <AddressLink address={contract} />
-        </div>
-      );
-    }
-
-    return <SubtitleContent />;
-  } catch {
-    return undefined;
-  }
-}
-
-// Export the action type configuration
-export const CW20SendActionType: ActionType<CW20SendMsg> = {
-  id: 'cw20_send',
-  name: 'Send CW20 to Contract',
-  icon: Send,
-  guard: isCW20Send,
-  getTitle: () => 'CW20 Send',
-  getSubtitle: getSubtitle,
-  expandable: true,
-  FormEditor: CW20SendForm,
-  ViewComponent: CW20SendView,
-};

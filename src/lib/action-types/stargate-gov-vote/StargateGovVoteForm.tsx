@@ -1,30 +1,8 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Vote } from 'lucide-react';
-import { ActionType } from '../action-registry';
+import type { StargateGovVoteMsg } from './StargateGovVoteAction';
 
-// Type definition for Stargate Gov Vote message
-export type StargateGovVoteMsg = {
-  stargate: {
-    typeUrl: '/cosmos.gov.v1beta1.MsgVote' | '/cosmos.gov.v1.MsgVote';
-    value: {
-      proposalId: string;
-      voter: string;
-      option: number;
-    };
-  };
-};
-
-// Type guard
-const isStargateGovVote = (data: any): data is StargateGovVoteMsg => {
-  return (
-    data?.stargate?.typeUrl === '/cosmos.gov.v1beta1.MsgVote' ||
-    data?.stargate?.typeUrl === '/cosmos.gov.v1.MsgVote'
-  );
-};
-
-// Form component
-function StargateGovVoteForm({
+export function StargateGovVoteForm({
   data,
   onUpdate,
 }: {
@@ -67,14 +45,3 @@ function StargateGovVoteForm({
     </div>
   );
 }
-
-// Export the action type configuration
-export const StargateGovVoteActionType: ActionType<StargateGovVoteMsg> = {
-  id: 'gov_vote_stargate',
-  name: 'Vote on Governance (Stargate)',
-  icon: Vote,
-  guard: isStargateGovVote,
-  getTitle: () => 'Governance Vote (Stargate)',
-  expandable: false,
-  FormEditor: StargateGovVoteForm,
-};

@@ -1,5 +1,3 @@
-import { AddressLink } from '@/components/ui/address-link';
-import { AmountDisplay } from '@/components/ui/amount-display';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -14,42 +12,10 @@ import { isCw20 } from '@/hooks/helpers/helpers';
 import { useChainByContractOptional } from '@/hooks/useChain';
 import { usePrices } from '@/hooks/usePrices';
 import { useProposalFormContext } from '@/lib/proposal-form-context';
-import { ArrowRightLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { ActionType } from '../action-registry';
+import type { CW20TransferMsg, TransferMessage } from './CW20TransferAction';
 
-// Type definition for CW20 Transfer message
-export type CW20TransferMsg = {
-  wasm: {
-    execute: {
-      contract_addr: string;
-      funds: any[];
-      msg: string; // base64 encoded JSON
-    };
-  };
-};
-
-// Decoded transfer message structure
-type TransferMessage = {
-  transfer: {
-    recipient: string;
-    amount: string;
-  };
-};
-
-// Type guard
-const isCW20Transfer = (data: any): data is CW20TransferMsg => {
-  if (typeof data?.wasm?.execute?.msg !== 'string') return false;
-  try {
-    const decoded = JSON.parse(atob(data.wasm.execute.msg));
-    return decoded?.transfer !== undefined;
-  } catch {
-    return false;
-  }
-};
-
-// Form component
-function CW20TransferForm({
+export function CW20TransferForm({
   data,
   onUpdate,
   onUpdateMulti,
@@ -281,95 +247,3 @@ function CW20TransferForm({
     </div>
   );
 }
-
-// View component for expanded view
-function CW20TransferView({ data }: { data: CW20TransferMsg }) {
-  const { contract_addr, msg } = data.wasm.execute;
-  const { getPrice } = usePrices();
-
-  // Decode message
-  let decodedMsg: TransferMessage | null = null;
-  try {
-    decodedMsg = JSON.parse(atob(msg));
-  } catch (e) {
-    console.error('Failed to decode message:', e);
-  }
-
-  const tokenInfo = getPrice(contract_addr);
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-3">
-        <div>
-          <div className="text-sm font-medium text-muted-foreground mb-1">Token Contract</div>
-          {tokenInfo ? (
-            <div className="flex items-center gap-2">
-              <AddressLink address={contract_addr} short={false} />
-              <span className="text-sm text-muted-foreground">({tokenInfo.display})</span>
-            </div>
-          ) : (
-            <AddressLink address={contract_addr} short={false} />
-          )}
-        </div>
-
-        {decodedMsg?.transfer?.amount && (
-          <div>
-            <div className="text-sm font-medium text-muted-foreground mb-2">Amount</div>
-            <AmountDisplay amount={decodedMsg.transfer.amount} denom={contract_addr} />
-          </div>
-        )}
-
-        {decodedMsg?.transfer?.recipient && (
-          <div>
-            <div className="text-sm font-medium text-muted-foreground mb-1">Recipient</div>
-            <AddressLink address={decodedMsg.transfer.recipient} short={false} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Get subtitle for preview
-function getSubtitle(data: CW20TransferMsg): React.ReactNode {
-  try {
-    const decoded = JSON.parse(atob(data.wasm.execute.msg));
-    if (!decoded?.transfer?.recipient || !decoded?.transfer?.amount) {
-      return undefined;
-    }
-
-    const { contract_addr } = data.wasm.execute;
-    const { recipient, amount } = decoded.transfer;
-
-    // Use a simple hook wrapper component to access usePrices
-    function SubtitleContent() {
-      const { getPrice } = usePrices();
-      const priceData = getPrice(contract_addr);
-      const displayAmount = priceData ? fromBaseUnits(amount, priceData.decimals) : amount;
-      const displayDenom = priceData?.display || contract_addr;
-
-      return (
-        <div className="flex gap-1">
-          {displayAmount} {displayDenom} to <AddressLink address={recipient} />
-        </div>
-      );
-    }
-
-    return <SubtitleContent />;
-  } catch {
-    return undefined;
-  }
-}
-
-// Export the action type configuration
-export const CW20TransferActionType: ActionType<CW20TransferMsg> = {
-  id: 'cw20_transfer',
-  name: 'Transfer CW20 Tokens',
-  icon: ArrowRightLeft,
-  guard: isCW20Transfer,
-  getTitle: () => 'CW20 Transfer',
-  getSubtitle: getSubtitle,
-  expandable: true,
-  FormEditor: CW20TransferForm,
-  ViewComponent: CW20TransferView,
-};

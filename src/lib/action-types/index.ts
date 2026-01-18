@@ -4,15 +4,15 @@
  */
 
 import { actionRegistry } from '../action-registry';
-import { BankSendActionType } from './bank-send';
-import { CW20SendActionType } from './cw20-send';
-import { CW20TransferActionType } from './cw20-transfer';
-import { GovVoteActionType } from './gov-vote';
-import { StakingDelegateActionType } from './staking-delegate';
-import { StakingUndelegateActionType } from './staking-undelegate';
-import { StargateGovVoteActionType } from './stargate-gov-vote';
-import { WasmExecuteActionType } from './wasm-execute';
-import { WasmUpdateAdminActionType } from './wasm-update-admin';
+import { BankSendActionType } from './bank-send/BankSendAction';
+import { CW20SendActionType } from './cw20-send/CW20SendAction';
+import { CW20TransferActionType } from './cw20-transfer/CW20TransferAction';
+import { GovVoteActionType } from './gov-vote/GovVoteAction';
+import { StakingDelegateActionType } from './staking-delegate/StakingDelegateAction';
+import { StakingUndelegateActionType } from './staking-undelegate/StakingUndelegateAction';
+import { StargateGovVoteActionType } from './stargate-gov-vote/StargateGovVoteAction';
+import { WasmExecuteActionType } from './wasm-execute/WasmExecuteAction';
+import { WasmUpdateAdminActionType } from './wasm-update-admin/WasmUpdateAdminAction';
 
 // Register all action types
 // Order matters: more specific types should come before more general ones

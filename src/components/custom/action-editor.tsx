@@ -1,10 +1,11 @@
+import { ProposalMessage } from '@/components/custom/proposal-message';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { actionRegistry } from '@/lib/action-types';
 import { ProposalAction } from '@/lib/proposal-drafts';
-import { ArrowDown, ArrowUp, Code2, Copy, Eye, Plus, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Code2, Copy, Eye, Form, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface ActionEditorProps {
@@ -32,7 +33,7 @@ export function ActionEditor({
 }: ActionEditorProps) {
   const [jsonString, setJsonString] = useState(() => JSON.stringify(action.data, null, 2));
   const [jsonError, setJsonError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'form' | 'json'>('form');
+  const [activeTab, setActiveTab] = useState<'form' | 'json' | 'preview'>('form');
 
   // Find the matching action type from the registry
   const actionType = actionRegistry.match(action.data);
@@ -59,11 +60,9 @@ export function ActionEditor({
       current = current[path[i]];
     }
     current[path[path.length - 1]] = value;
-    console.log('🚀 ~ updateField ~ current:', current);
     onUpdate({ ...action, data: updated });
     const newJson = JSON.stringify(updated, null, 2);
     setJsonString(newJson);
-    console.log('🚀 ~ updateField ~ current:', newJson);
   };
 
   const updateMultiField = (updates: Array<{ path: string[]; value: any }>) => {
@@ -123,17 +122,21 @@ export function ActionEditor({
       <CardContent>
         <Tabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v as 'form' | 'json')}
+          onValueChange={(v) => setActiveTab(v as 'form' | 'json' | 'preview')}
           className="gap-3"
         >
           <TabsList size="sm">
             <TabsTrigger value="form" className="gap-2" size="sm">
-              <Eye className="h-4 w-4" />
+              <Form className="h-4 w-4" />
               Form
             </TabsTrigger>
             <TabsTrigger value="json" className="gap-2" size="sm">
               <Code2 className="h-4 w-4" />
               JSON
+            </TabsTrigger>
+            <TabsTrigger value="preview" className="gap-2" size="sm">
+              <Eye className="h-4 w-4" />
+              Preview
             </TabsTrigger>
           </TabsList>
 
@@ -149,6 +152,10 @@ export function ActionEditor({
               />
               {jsonError && <p className="text-sm text-destructive">{jsonError}</p>}
             </div>
+          </TabsContent>
+
+          <TabsContent value="preview">
+            <ProposalMessage message={action.data} />
           </TabsContent>
         </Tabs>
       </CardContent>

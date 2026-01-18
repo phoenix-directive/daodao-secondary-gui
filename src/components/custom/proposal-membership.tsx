@@ -47,10 +47,12 @@ export function ProposalMembership({
   const userVote = membershipData.data.value?.userVote || null;
   const isLoading = membershipData.loading.value;
 
+  const power = toNumb(votingPower || '0');
+
   // Memoized messages
   const voteYesMessages = useMemo(
     () =>
-      address
+      address && power > 0
         ? [
             new MsgExecuteContract({
               sender: address,
@@ -64,7 +66,7 @@ export function ProposalMembership({
             }),
           ]
         : [],
-    [address, proposalModuleAddress, proposal.id],
+    [address, power, proposalModuleAddress, proposal.id],
   );
 
   const voteNoMessages = useMemo(
@@ -127,6 +129,7 @@ export function ProposalMembership({
   const voteYesTx = useTx(voteYesMessages, {
     title: 'Vote Yes',
     chainId: Chain.Terra,
+    valid: power > 0,
     onTxSuccess: () => {
       setIsProcessing(false);
       onVoteSuccess?.();
@@ -139,6 +142,7 @@ export function ProposalMembership({
   const voteNoTx = useTx(voteNoMessages, {
     title: 'Vote No',
     chainId: Chain.Terra,
+    valid: power > 0,
     onTxSuccess: () => {
       setIsProcessing(false);
       onVoteSuccess?.();
@@ -151,6 +155,7 @@ export function ProposalMembership({
   const voteAbstainTx = useTx(voteAbstainMessages, {
     title: 'Vote Abstain',
     chainId: Chain.Terra,
+    valid: power > 0,
     onTxSuccess: () => {
       setIsProcessing(false);
       onVoteSuccess?.();
@@ -163,6 +168,7 @@ export function ProposalMembership({
   const executeTx = useTx(executeMessages, {
     title: 'Execute Proposal',
     chainId: Chain.Terra,
+    valid: power > 0,
     onTxSuccess: () => {
       setIsProcessing(false);
       onVoteSuccess?.();
@@ -191,7 +197,6 @@ export function ProposalMembership({
     );
   }
 
-  const power = toNumb(votingPower || '0');
   const powerPercent = getPercent(power, totalPower);
   const canVote = status === 'open' && power > 0;
   const hasVoted = userVote !== null;

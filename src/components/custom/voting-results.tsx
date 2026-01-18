@@ -256,8 +256,6 @@ export function VotingResults({ votes, totalPower, threshold }: VotingResultsPro
   let yesPercentReal = getPercent(yes, no + yes);
   let abstainPercent = getPercent(abstain, turnout);
 
-  console.log('🚀 ~ VotingResults ~ threshold: xxxx', threshold);
-
   if ('absolute_percentage' in threshold || 'absolute_count' in threshold) {
     yesPercent = getPercent(yes, total);
     noPercent = getPercent(no, total);

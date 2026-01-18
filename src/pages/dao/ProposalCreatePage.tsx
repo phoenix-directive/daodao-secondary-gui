@@ -375,7 +375,7 @@ export function ProposalCreatePage() {
                         checked={draft.proposalType === 'single'}
                         onChange={(e) => {
                           updateDraft({ proposalType: e.target.value as 'single' | 'multiple' });
-                          setSearchParams({ type: 'A' });
+                          setSearchParams({ type: 'A' }, { replace: true });
                         }}
                         disabled={!availableProposalTypes.single}
                       />
@@ -399,7 +399,7 @@ export function ProposalCreatePage() {
                         checked={draft.proposalType === 'multiple'}
                         onChange={(e) => {
                           updateDraft({ proposalType: e.target.value as 'single' | 'multiple' });
-                          setSearchParams({ type: 'B' });
+                          setSearchParams({ type: 'B' }, { replace: true });
                         }}
                         disabled={!availableProposalTypes.multiple}
                       />

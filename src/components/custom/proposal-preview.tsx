@@ -72,7 +72,6 @@ export function ProposalPreview({
                 <ProposalMessage
                   key={index}
                   message={msg}
-                  index={index}
                   expanded={expandedMessages.has(index)}
                   onToggleExpanded={(isExpanded) => {
                     const newExpanded = new Set(expandedMessages);
@@ -124,7 +123,6 @@ export function ProposalPreview({
                           <ProposalMessage
                             key={action.id}
                             message={action.data}
-                            index={actionIndex}
                             expanded={expandedMessages.has(choiceIndex * 1000 + actionIndex)}
                             onToggleExpanded={(isExpanded) => {
                               const newExpanded = new Set(expandedMessages);

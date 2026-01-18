@@ -19,7 +19,6 @@ interface MessageTypeInfo {
 
 interface ProposalMessageProps {
   message: any;
-  index: number;
   expanded?: boolean;
   onToggleExpanded?: (expanded: boolean) => void;
   onRemove?: () => void;
@@ -27,7 +26,6 @@ interface ProposalMessageProps {
 
 export function ProposalMessage({
   message,
-  index,
   expanded: controlledExpanded,
   onToggleExpanded,
   onRemove,

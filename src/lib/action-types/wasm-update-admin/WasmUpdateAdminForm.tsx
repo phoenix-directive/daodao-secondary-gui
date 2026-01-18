@@ -1,25 +1,8 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserCog } from 'lucide-react';
-import { ActionType } from '../action-registry';
+import type { WasmUpdateAdminMsg } from './WasmUpdateAdminAction';
 
-// Type definition for Wasm Update Admin message
-export type WasmUpdateAdminMsg = {
-  wasm: {
-    update_admin: {
-      contract_addr: string;
-      admin: string;
-    };
-  };
-};
-
-// Type guard
-const isWasmUpdateAdmin = (data: any): data is WasmUpdateAdminMsg => {
-  return data?.wasm?.update_admin !== undefined;
-};
-
-// Form component
-function WasmUpdateAdminForm({
+export function WasmUpdateAdminForm({
   data,
   onUpdate,
 }: {
@@ -49,14 +32,3 @@ function WasmUpdateAdminForm({
     </div>
   );
 }
-
-// Export the action type configuration
-export const WasmUpdateAdminActionType: ActionType<WasmUpdateAdminMsg> = {
-  id: 'update_admin',
-  name: 'Update Contract Admin',
-  icon: UserCog,
-  guard: isWasmUpdateAdmin,
-  getTitle: () => 'Update Contract Admin',
-  expandable: false,
-  FormEditor: WasmUpdateAdminForm,
-};
