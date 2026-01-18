@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react';
 
+// Injected at build time by Vite
+declare const __BUILD_VERSION__: string;
+
 const CHECK_INTERVAL = 60000; // Check every 60 seconds
 const VERSION_FILE = '/version.json';
+const COMPILED_VERSION = typeof __BUILD_VERSION__ !== 'undefined' ? __BUILD_VERSION__ : null;
 
 interface VersionInfo {
   hash: string;
@@ -12,7 +16,7 @@ let initialVersion: string | null = null;
 
 /**
  * Hook to periodically check if a new version is available and force reload if detected.
- * Compares the current build hash with the server's version.json file.
+ * Compares both the compiled build hash and the server's version.json file.
  */
 export function useVersionCheck() {
   const intervalRef = useRef<number | null>(null);
@@ -27,7 +31,16 @@ export function useVersionCheck() {
         if (response.ok) {
           const data: VersionInfo = await response.json();
           initialVersion = data.hash;
-          console.log('[Version Check] Initial version:', initialVersion);
+          console.log('[Version Check] Compiled version:', COMPILED_VERSION);
+          console.log('[Version Check] Initial server version:', initialVersion);
+          
+          // If compiled version exists and differs from server, reload immediately
+          if (COMPILED_VERSION && COMPILED_VERSION !== initialVersion) {
+            console.log(
+              '[Version Check] Compiled version mismatch detected. Reloading...'
+            );
+            window.location.reload();
+          }
         }
       } catch (error) {
         console.warn('[Version Check] Failed to fetch initial version:', error);
@@ -36,7 +49,7 @@ export function useVersionCheck() {
 
     // Check for version updates
     const checkVersion = async () => {
-      if (!initialVersion) return;
+      if (!initialVersion && !COMPILED_VERSION) return;
 
       try {
         const response = await fetch(VERSION_FILE + '?t=' + Date.now(), {
@@ -44,12 +57,15 @@ export function useVersionCheck() {
         });
         if (response.ok) {
           const data: VersionInfo = await response.json();
-          if (data.hash !== initialVersion) {
+          
+          // Check against both compiled version and initial fetched version
+          const currentVersion = COMPILED_VERSION || initialVersion;
+          if (currentVersion && data.hash !== currentVersion) {
             console.log(
               '[Version Check] New version detected:',
               data.hash,
               '(current:',
-              initialVersion,
+              currentVersion,
               ')',
             );
             // Force a hard reload to get the new version

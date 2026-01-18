@@ -6,3 +6,6 @@ declare module '@tanstack/table-core' {
     width?: string;
   }
 }
+
+// Vite injected build-time constants
+declare const __BUILD_VERSION__: string;

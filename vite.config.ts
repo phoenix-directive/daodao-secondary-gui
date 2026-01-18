@@ -9,10 +9,13 @@ import svgr from 'vite-plugin-svgr';
 
 // Plugin to generate a build hash and write it to public/version.json
 function versionHashPlugin(): Plugin {
+  let buildHash = '';
+  
   return {
     name: 'version-hash',
     buildStart() {
       const hash = crypto.randomBytes(16).toString('hex');
+      buildHash = hash;
       const timestamp = Date.now();
       const versionInfo = {
         hash,
@@ -29,6 +32,13 @@ function versionHashPlugin(): Plugin {
 
       fs.writeFileSync(versionFile, JSON.stringify(versionInfo, null, 2));
       console.log(`[Version Hash] Generated: ${hash}`);
+    },
+    config() {
+      return {
+        define: {
+          __BUILD_VERSION__: JSON.stringify(buildHash),
+        },
+      };
     },
   };
 }
