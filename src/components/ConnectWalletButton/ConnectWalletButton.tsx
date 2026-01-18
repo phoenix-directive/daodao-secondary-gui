@@ -17,9 +17,8 @@ import { Chain } from '@/hooks/helpers/assets';
 import { useAddress, useIsReadonly } from '@/hooks/useWallet';
 import { cn } from '@/lib/utils';
 import { cx } from 'class-variance-authority';
-import { Copy, ExternalLink, History, LogOut, User, Wallet } from 'lucide-react';
+import { Copy, ExternalLink, LogOut, Wallet } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 
 export function ConnectWalletButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,8 +76,8 @@ export function ConnectWalletButton() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>Wallet</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
+              {/* <DropdownMenuSeparator /> */}
+              {/* <DropdownMenuItem asChild>
                 <Link to="/profile">
                   <User className="h-4 w-4" />
                   Profile
@@ -89,7 +88,7 @@ export function ConnectWalletButton() {
                   <History className=" h-4 w-4" />
                   Transactions
                 </Link>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleCopy}>
                 <Copy className="h-4 w-4" />

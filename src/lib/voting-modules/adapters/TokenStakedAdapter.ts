@@ -70,6 +70,10 @@ export class TokenStakedAdapter implements VotingModuleAdapter {
     };
   }
 
+  async fetchDecimals(): Promise<number> {
+    return 6;
+  }
+
   getType(): VotingModuleType {
     return this.type;
   }

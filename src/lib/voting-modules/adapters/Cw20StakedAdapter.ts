@@ -77,6 +77,10 @@ export class Cw20StakedAdapter implements VotingModuleAdapter {
     };
   }
 
+  async fetchDecimals(): Promise<number> {
+    return 6;
+  }
+
   getType(): VotingModuleType {
     return VotingModuleType.CW20_STAKED;
   }

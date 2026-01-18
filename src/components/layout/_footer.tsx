@@ -1,5 +1,5 @@
-import { CredaLogoIcon } from '@/components/ui/custom/creda-logo-icon';
-import { Send } from 'lucide-react';
+import Logo from '@/components/ui/custom/creda-logo';
+import { Landmark, Send } from 'lucide-react';
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { siX } from 'simple-icons';
@@ -26,25 +26,25 @@ interface FooterProps {
 }
 
 export function Footer({
-  tagline = 'Believe in Growth.',
+  tagline = 'Everyone needs a DAO.',
   menuItems = [
-    {
-      title: 'Product',
-      links: [
-        { text: 'Markets', link: '/markets' },
-        { text: 'Dashboard', link: '/' },
-        // { text: 'Analytics', link: '/analytics' },
-        // { text: 'Governance', link: '/governance' },
-      ],
-    },
+    // {
+    //   title: 'Product',
+    //   links: [
+    //     { text: 'Markets', link: '/markets' },
+    //     { text: 'Dashboard', link: '/' },
+    //     // { text: 'Analytics', link: '/analytics' },
+    //     // { text: 'Governance', link: '/governance' },
+    //   ],
+    // },
     {
       title: 'Resources',
       links: [
-        { text: 'Documentation', url: 'https://docs.creda.finance', external: true },
-        { text: 'Brand Assets', link: '/brand' },
+        { text: 'Documentation', url: 'https://docs.phoenix.money', external: true },
+        // { text: 'Brand Assets', link: '/brand' },
         {
           text: 'GitHub',
-          url: 'https://github.com/credafinance',
+          url: 'https://github.com/phoenix-directive',
           external: true,
         },
       ],
@@ -61,7 +61,7 @@ export function Footer({
               X
             </span>
           ),
-          url: 'https://x.com/creda_finance',
+          url: 'https://x.com/phoenix_dir',
           external: true,
         },
         {
@@ -71,13 +71,23 @@ export function Footer({
               Telegram
             </span>
           ),
-          url: 'https://t.me/creda_finance',
+          url: 'https://t.me/TerraNetworkLobby',
+          external: true,
+        },
+        {
+          text: (
+            <span className="flex items-center gap-2">
+              <Landmark className="h-4 w-4" />
+              Forum
+            </span>
+          ),
+          url: 'https://forum.phoenix.money',
           external: true,
         },
       ],
     },
   ],
-  copyright = `© ${new Date().getFullYear()} Creda Finance. All rights reserved.`,
+  copyright = `© ${new Date().getFullYear()} Phoenix Foundation. All rights reserved.`,
   bottomLinks = [
     { text: 'Disclaimer', link: '/legal#disclaimer' },
     { text: 'Terms and Conditions', link: '/legal#terms' },
@@ -88,10 +98,10 @@ export function Footer({
     <footer className="border-t bg-background">
       <div className="container mx-auto max-w-screen-2xl px-4 py-16 md:px-8 md:py-24">
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-6">
-          <div className="col-span-2 mb-8 lg:mb-0">
+          <div className="col-span-4 mb-8 lg:mb-0">
             <Link to="/" className="flex items-center gap-2">
-              <CredaLogoIcon className="h-10 w-10 -mx-2" />
-              <span className="text-xl font-bold">Creda</span>
+              <Logo className="h-10 w-10 grayscale" />
+              <span className="text-xl font-bold">DAO</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">{tagline}</p>
           </div>
@@ -134,4 +144,3 @@ export function Footer({
     </footer>
   );
 }
-

@@ -10,7 +10,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useHealthBadgeSettings } from '@/hooks/useHealthBadgeSettings';
-import { signalIncludeAssetApy } from '@/lib/signals';
 import { useTheme } from '@/lib/useTheme';
 import { cn } from '@/lib/utils';
 
@@ -51,7 +50,7 @@ export function SettingsMenu() {
           </DropdownMenuCheckboxItem>
         </div>
 
-        <DropdownMenuSeparator />
+        {/* <DropdownMenuSeparator />
 
         <DropdownMenuSeparator />
 
@@ -68,7 +67,7 @@ export function SettingsMenu() {
           >
             <span>Include Asset APY</span>
           </DropdownMenuCheckboxItem>
-        </div>
+        </div> */}
       </DropdownMenuContent>
     </DropdownMenu>
   );

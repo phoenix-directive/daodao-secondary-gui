@@ -49,6 +49,8 @@ export interface VotingModuleAdapter {
    */
   fetchMembers(limit: number, startAfter?: string): Promise<MembersResponse>;
 
+  fetchDecimals(): Promise<number>;
+
   /**
    * Get the voting module type
    */

@@ -180,6 +180,10 @@ export class Cw721StakedAdapter implements VotingModuleAdapter {
     };
   }
 
+  async fetchDecimals(): Promise<number> {
+    return 0;
+  }
+
   getType(): VotingModuleType {
     return VotingModuleType.CW721_STAKED;
   }

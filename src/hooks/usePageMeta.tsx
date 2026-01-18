@@ -1,6 +1,6 @@
-import { useLayoutEffect } from "react";
+import { useLayoutEffect } from 'react';
 
-const BASE_TITLE = "Creda Finance";
+const BASE_TITLE = 'DAO';
 
 export function usePageMeta(className: string, displayName: string) {
   useLayoutEffect(() => {

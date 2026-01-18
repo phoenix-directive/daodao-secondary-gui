@@ -1,0 +1,6 @@
+cd public && \
+magick favicon.png \
+  -define icon:auto-resize=16,32,48,64,128,256 favicon.ico && \
+cp favicon.png logo.png && \
+magick favicon.png \
+  -resize 512x512 logo-512.png

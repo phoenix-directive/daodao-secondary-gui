@@ -1,5 +1,6 @@
 import { ProposalMembership } from '@/components/custom/proposal-membership';
 import { ProposalMessage } from '@/components/custom/proposal-message';
+import { VotesList } from '@/components/custom/proposals/votes-list';
 import { VotingResults } from '@/components/custom/voting-results';
 import { AddressLink } from '@/components/ui/address-link';
 import { Button } from '@/components/ui/button';
@@ -10,9 +11,11 @@ import { Chain } from '@/hooks/helpers/assets';
 import { fromUnixNano } from '@/hooks/helpers/helpers';
 import { useChain } from '@/hooks/useChain';
 import { useDaoDaoState } from '@/hooks/useDaoDao';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { globalReload } from '@/hooks/useReload';
 import { useAddress } from '@/hooks/useWallet';
 import { ProposalAction, ProposalDraft } from '@/lib/proposal-drafts';
+import { createVotingModuleAdapter } from '@/lib/voting-modules/adapter-factory';
 import { AlertCircle, Copy, ExternalLink, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -35,6 +38,7 @@ export function ProposalDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedMessages, setExpandedMessages] = useState<Set<number>>(new Set());
+  const [decimals, setDecimals] = useState<number>(0);
   const address = useAddress(Chain.Terra);
 
   // Parse the prefix and numeric ID from the proposalId (e.g., "A-123" -> prefix="A", id=123)
@@ -57,6 +61,10 @@ export function ProposalDetailPage() {
     return module?.address || null;
   }, [daoData, prefix]);
 
+  // Set page title
+  const proposalTitle = proposal?.proposal.title || `Proposal ${proposalId}`;
+  usePageMeta('proposal-detail', proposalTitle);
+
   useEffect(() => {
     const fetchProposal = async () => {
       if (!proposalModuleAddress || numericId === null) return;
@@ -75,7 +83,20 @@ export function ProposalDetailPage() {
         ]);
 
         setProposal(proposalResult);
-        setConfig(configResult);
+
+        // Fetch voting module decimals if we have the DAO data
+        if (daoData?.voting_module) {
+          try {
+            const adapter = await createVotingModuleAdapter(daoData.voting_module, chain);
+            if (adapter) {
+              const decimals = await adapter.fetchDecimals();
+              setDecimals(decimals);
+            }
+          } catch (err) {
+            console.error('Failed to fetch voting module decimals:', err);
+            // Non-critical error, continue with default decimals
+          }
+        }
       } catch (err: any) {
         console.error('Failed to fetch proposal:', err);
         setError(err.message || 'Failed to load proposal');
@@ -85,7 +106,7 @@ export function ProposalDetailPage() {
     };
 
     fetchProposal();
-  }, [proposalModuleAddress, numericId, chain, globalReload.value]);
+  }, [proposalModuleAddress, numericId, chain, globalReload.value, daoData]);
 
   const getExpirationDate = (expiration: any) => {
     if (!expiration) return 'Unknown';
@@ -125,7 +146,7 @@ export function ProposalDetailPage() {
     };
 
     const encodedData = encodeURIComponent(JSON.stringify(duplicateData));
-    navigate(`/dao/${daoAddress}/proposals/create?duplicate=${encodedData}`);
+    navigate(`/dao/${daoAddress}/proposals/create?data=${encodedData}`);
   };
 
   if (isLoading) {
@@ -282,7 +303,6 @@ export function ProposalDetailPage() {
                 <ProposalMessage
                   key={index}
                   message={msg}
-                  index={index}
                   expanded={expandedMessages.has(index)}
                   onToggleExpanded={(isExpanded) => {
                     const newExpanded = new Set(expandedMessages);
@@ -304,6 +324,16 @@ export function ProposalDetailPage() {
             totalPower={proposal.proposal.total_power}
             threshold={proposal.proposal.threshold}
           />
+
+          {/* Votes List */}
+          {proposalModuleAddress && numericId !== null && (
+            <VotesList
+              proposalModuleAddress={proposalModuleAddress}
+              proposalId={numericId}
+              totalPower={proposal.proposal.total_power}
+              decimals={decimals}
+            />
+          )}
         </div>
 
         {/* Right Sidebar - Desktop Only */}

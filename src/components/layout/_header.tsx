@@ -20,7 +20,7 @@ export function Header() {
           {/* Logo */}
           <Link to={'/'} className="flex items-center space-x-2 cursor-pointer">
             <Logo className="h-9 w-9" />
-            <span className="font-bold sm:inline-block text-xl">DAO</span>
+            <span className="font-bold sm:inline-block text-xl">DAOs</span>
           </Link>
 
           {/* Breadcrumbs - shown on mobile and desktop */}

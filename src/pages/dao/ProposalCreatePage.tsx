@@ -10,6 +10,7 @@ import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedCosmosMsg } from '@/daodao/types/contracts';
 import { useDaoDaoState } from '@/hooks/useDaoDao';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { ActionCategory, ActionTemplate } from '@/lib/action-templates';
 import {
   clearDraft,
@@ -27,6 +28,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export function ProposalCreatePage() {
+  usePageMeta('proposal-create', 'Create Proposal');
   const { address: daoAddress } = useParams<{ address: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -123,10 +125,13 @@ export function ProposalCreatePage() {
 
   // Handle duplicate query param
   useEffect(() => {
-    const duplicateParam = searchParams.get('duplicate');
+    const duplicateParam = searchParams.get('data');
+    console.log('🚀 ~ ProposalCreatePage ~ duplicateData:', duplicateParam, daoAddress);
+
     if (duplicateParam && daoAddress) {
       try {
-        const duplicateData = JSON.parse(decodeURIComponent(duplicateParam));
+        const duplicateData = JSON.parse(duplicateParam);
+        console.log('🚀 ~ ProposalCreatePage ~ duplicateData:', duplicateData);
         setDraft({
           title: `Copy of ${duplicateData.title}`,
           description: duplicateData.description,
@@ -142,7 +147,7 @@ export function ProposalCreatePage() {
       }
       // Remove the query param after applying
       const newSearchParams = new URLSearchParams(searchParams);
-      newSearchParams.delete('duplicate');
+      // newSearchParams.delete('data');
       setSearchParams(newSearchParams, { replace: true });
     }
   }, [searchParams, daoAddress, setSearchParams]);

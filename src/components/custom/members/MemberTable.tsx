@@ -80,7 +80,7 @@ export function MemberTable({ members, decimals = 6 }: MemberTableProps) {
                 className="transition-colors hover:bg-muted/70 border-b last:border-0"
               >
                 <TableCell className="py-1">
-                  <AddressLink address={member.address} />
+                  <AddressLink address={member.address} allowTagging />
                 </TableCell>
                 <TableCell className="py-1 text-right font-medium ">
                   {formatVotingPower(member.votingPower)}

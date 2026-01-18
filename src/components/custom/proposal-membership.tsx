@@ -48,11 +48,17 @@ export function ProposalMembership({
   const isLoading = membershipData.loading.value;
 
   const power = toNumb(votingPower || '0');
+  const powerPercent = getPercent(power, totalPower);
+  const hasVoted = userVote !== null;
+  const canRevote = config?.allow_revoting ?? false;
+  const canVote = !!address && status === 'open' && power > 0 && (!hasVoted || canRevote);
+  const canExecute =
+    status === 'passed' && power > 0 && proposal.proposal.msgs && proposal.proposal.msgs.length > 0;
 
   // Memoized messages
   const voteYesMessages = useMemo(
     () =>
-      address && power > 0
+      canVote
         ? [
             new MsgExecuteContract({
               sender: address,
@@ -66,12 +72,12 @@ export function ProposalMembership({
             }),
           ]
         : [],
-    [address, power, proposalModuleAddress, proposal.id],
+    [canVote, address, proposalModuleAddress, proposal.id],
   );
 
   const voteNoMessages = useMemo(
     () =>
-      address
+      canVote
         ? [
             new MsgExecuteContract({
               sender: address,
@@ -85,12 +91,12 @@ export function ProposalMembership({
             }),
           ]
         : [],
-    [address, proposalModuleAddress, proposal.id],
+    [canVote, address, proposalModuleAddress, proposal.id],
   );
 
   const voteAbstainMessages = useMemo(
     () =>
-      address
+      canVote
         ? [
             new MsgExecuteContract({
               sender: address,
@@ -104,12 +110,12 @@ export function ProposalMembership({
             }),
           ]
         : [],
-    [address, proposalModuleAddress, proposal.id],
+    [canVote, address, proposalModuleAddress, proposal.id],
   );
 
   const executeMessages = useMemo(
     () =>
-      address
+      canExecute
         ? [
             new MsgExecuteContract({
               sender: address,
@@ -122,14 +128,14 @@ export function ProposalMembership({
             }),
           ]
         : [],
-    [address, proposalModuleAddress, proposal.id],
+    [canExecute, address, proposalModuleAddress, proposal.id],
   );
 
   // Transaction hooks
   const voteYesTx = useTx(voteYesMessages, {
     title: 'Vote Yes',
     chainId: Chain.Terra,
-    valid: power > 0,
+    valid: canVote,
     onTxSuccess: () => {
       setIsProcessing(false);
       onVoteSuccess?.();
@@ -142,7 +148,7 @@ export function ProposalMembership({
   const voteNoTx = useTx(voteNoMessages, {
     title: 'Vote No',
     chainId: Chain.Terra,
-    valid: power > 0,
+    valid: canVote,
     onTxSuccess: () => {
       setIsProcessing(false);
       onVoteSuccess?.();
@@ -155,7 +161,7 @@ export function ProposalMembership({
   const voteAbstainTx = useTx(voteAbstainMessages, {
     title: 'Vote Abstain',
     chainId: Chain.Terra,
-    valid: power > 0,
+    valid: canVote,
     onTxSuccess: () => {
       setIsProcessing(false);
       onVoteSuccess?.();
@@ -168,7 +174,7 @@ export function ProposalMembership({
   const executeTx = useTx(executeMessages, {
     title: 'Execute Proposal',
     chainId: Chain.Terra,
-    valid: power > 0,
+    valid: canExecute,
     onTxSuccess: () => {
       setIsProcessing(false);
       onVoteSuccess?.();
@@ -196,13 +202,6 @@ export function ProposalMembership({
       </Card>
     );
   }
-
-  const powerPercent = getPercent(power, totalPower);
-  const canVote = status === 'open' && power > 0;
-  const hasVoted = userVote !== null;
-  const canRevote = config?.allow_revoting ?? false;
-  const canExecute =
-    status === 'passed' && power > 0 && proposal.proposal.msgs && proposal.proposal.msgs.length > 0;
 
   const getVoteIcon = (vote: string) => {
     if (vote === 'yes') {

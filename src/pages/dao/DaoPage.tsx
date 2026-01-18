@@ -6,6 +6,7 @@ import { DaoDaoIcon } from '@/components/ui/daodao-icon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDaoDaoState } from '@/hooks/useDaoDao';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { addRecentDao, isFavorite, toggleFavorite } from '@/lib/signals-instances';
 import { AppsTab } from '@/pages/dao/tabs/AppsTab';
 import { MembersTab } from '@/pages/dao/tabs/MembersTab';
@@ -31,7 +32,12 @@ export function DaoPage() {
 
   // Valid tabs
   const validTabs = ['proposals', 'treasury', 'members', 'apps'];
-  const activeTab = validTabs.includes(tab || '') ? tab : 'proposals';
+  const activeTab = validTabs.includes(tab || '') ? (tab ?? '') : 'proposals';
+
+  // Set page title
+  const tabTitle = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+  const pageTitle = daoName ? `${daoName} - ${tabTitle}` : `DAO - ${tabTitle}`;
+  usePageMeta('dao', pageTitle);
 
   // Handle tab change
   const handleTabChange = (newTab: string) => {

@@ -77,6 +77,10 @@ export class Cw4Adapter implements VotingModuleAdapter {
     };
   }
 
+  async fetchDecimals(): Promise<number> {
+    return 0;
+  }
+
   getType(): VotingModuleType {
     return VotingModuleType.CW4;
   }

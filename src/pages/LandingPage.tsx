@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DaoAvatar } from '@/components/ui/dao-avatar';
 import { Input } from '@/components/ui/input';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import {
   favoriteDaos,
   isFavorite,
@@ -16,6 +17,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 export function LandingPage() {
+  usePageMeta('landing', 'Home');
   const navigate = useNavigate();
   const [searchAddress, setSearchAddress] = useState('');
 
