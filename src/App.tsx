@@ -2,6 +2,7 @@ import { Layout } from '@/components/layout/_layout';
 import { ScrollToTop } from '@/components/layout/scroll-to-top';
 import { ShuttleProvider } from '@/delphi-labs/shuttle-react';
 import { triggerReload } from '@/hooks/useReload';
+import { useVersionCheck } from '@/hooks/useVersionCheck';
 import { ModalServiceProvider } from '@/lib/modal-service-provider';
 import { ThemeProvider } from '@/lib/theme-provider';
 import { useTheme } from '@/lib/useTheme';
@@ -23,6 +24,9 @@ if (import.meta.hot) {
 
 function AppContent() {
   const { theme } = useTheme();
+  
+  // Check for new app versions periodically
+  useVersionCheck();
 
   return (
     <>
