@@ -5,3 +5,6 @@ export { AddressInputModal } from './address-input-modal';
 export type { AddressInputModalProps } from './address-input-modal';
 
 export { AppMessagesModal } from './app-messages-modal';
+
+export { ConfirmModal } from './confirm-modal';
+export type { ConfirmModalProps } from './confirm-modal';

@@ -53,7 +53,7 @@ export function Breadcrumbs() {
           });
           // Add create breadcrumb
           items.push({
-            label: 'Create Proposal',
+            label: 'Create',
           });
         } else {
           // Add proposal detail breadcrumb

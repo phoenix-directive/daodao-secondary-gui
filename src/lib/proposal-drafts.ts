@@ -2,9 +2,11 @@
  * Utilities for managing proposal drafts in localStorage per DAO
  */
 
+import { UnifiedCosmosMsg } from '@/daodao/types/contracts';
+
 export interface ProposalAction {
   id: string;
-  data: any; // The actual Cosmos message
+  data: UnifiedCosmosMsg; // The actual Cosmos message
 }
 
 export interface ProposalChoice {

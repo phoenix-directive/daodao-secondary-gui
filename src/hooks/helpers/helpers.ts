@@ -244,9 +244,9 @@ export const timed = async <T>(name: string, callback: () => Promise<T>): Promis
 export type ExtractParams<T extends string> = T extends `${infer _}:${infer Param}/${infer Rest}`
   ? { [K in Param | keyof ExtractParams<Rest>]: string }
   : T extends `${infer _}:${infer Param}`
-  ? { [K in Param]: string }
-  : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    {};
+    ? { [K in Param]: string }
+    : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+      {};
 
 export const toNumb = (val: number | string | undefined | null, def = 0) => {
   return +(val ?? def);
@@ -412,7 +412,7 @@ export function getErrorType(errorMsg: string): string {
   }
 
   if (msg.includes('unauthorized') || msg.includes('not authorized')) {
-    return 'Unauthorized';
+    return 'Unauthorized: User not part of the DAO or Multi-Sig';
   }
 
   return 'Unknown';
@@ -571,7 +571,10 @@ export function isValidCosmWasmAddress(address: string, prefix: string): boolean
 }
 
 export class ExtendedError extends Error {
-  constructor(message: string, public title: string) {
+  constructor(
+    message: string,
+    public title: string,
+  ) {
     super(message);
   }
 }
@@ -581,10 +584,13 @@ export async function forkPromise<T extends Record<string, Promise<any>>>(
 ): Promise<{ [K in keyof T]: Awaited<T[K]> }> {
   const entries = Object.entries(element) as [keyof T, Promise<any>][];
   const results = await Promise.all(entries.map(([, p]) => p));
-  return entries.reduce((acc, [key], i) => {
-    acc[key] = results[i];
-    return acc;
-  }, {} as { [K in keyof T]: Awaited<T[K]> });
+  return entries.reduce(
+    (acc, [key], i) => {
+      acc[key] = results[i];
+      return acc;
+    },
+    {} as { [K in keyof T]: Awaited<T[K]> },
+  );
 }
 
 export function downloadBase64File(base64: string, fileName: string, mimeType: string) {

@@ -117,7 +117,7 @@ export function LandingPage() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="h-12 px-8 font-semibold transition-all duration-200 active:scale-95 bg-red-500"
+                    className="h-12 px-8 font-semibold transition-all duration-200 active:scale-95 "
                   >
                     <span className="mr-2">Search</span>
                     <ArrowRight className="h-4 w-4" />

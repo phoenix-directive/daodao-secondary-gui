@@ -2,15 +2,28 @@ import { ActionEditor } from '@/components/custom/action-editor';
 import { ActionLibraryModal } from '@/components/custom/action-library-modal';
 import { DappComponent } from '@/components/custom/apps';
 import { ProposalPreview } from '@/components/custom/proposal-preview';
+import { ConfirmModal } from '@/components/modals';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorDisplay } from '@/components/ui/error-display';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedCosmosMsg } from '@/daodao/types/contracts';
+import {
+  ExecuteMsg as ExecuteMsgMulti,
+  MultipleChoiceOption,
+} from '@/daodao/types/contracts/DaoProposalMultiple';
+import { ExecuteMsg } from '@/daodao/types/contracts/DaoProposalSingle.v2';
+import { MsgExecuteContract } from '@/delphi-labs/shuttle';
+import { useProposalActionsSimulation } from '@/hooks';
+import { Chain } from '@/hooks/helpers/assets';
 import { useDaoDaoState } from '@/hooks/useDaoDao';
 import { usePageMeta } from '@/hooks/usePageMeta';
+import { useProposalCreationPolicy } from '@/hooks/useProposalCreationPolicy';
+import { useTx } from '@/hooks/useTx';
+import { useAddress } from '@/hooks/useWallet';
 import { ActionCategory, ActionTemplate } from '@/lib/action-templates';
 import {
   clearDraft,
@@ -22,20 +35,122 @@ import {
   saveDraft,
 } from '@/lib/proposal-drafts';
 import { ProposalFormProvider } from '@/lib/proposal-form-context';
-import { ArrowLeft, Eye, FileText, Library, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowLeft, Eye, FileText, Library, Loader2, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
+
+// Reusable publish actions component
+function PublishActions({
+  publishProposal,
+  handlePublish,
+  handleClearDraft,
+  activeTab,
+  setActiveTab,
+  coreMessagesSimulation,
+}: {
+  publishProposal: ReturnType<typeof useTx>;
+  handlePublish: () => void;
+  handleClearDraft: () => void;
+  activeTab: 'edit' | 'preview';
+  setActiveTab: (tab: 'edit' | 'preview') => void;
+  coreMessagesSimulation: ReturnType<typeof useProposalActionsSimulation>;
+}) {
+  console.log(publishProposal.buttonProps);
+
+  // Collect all errors
+  const errors: string[] = [];
+
+  // Add proposal simulation error
+  if (publishProposal.buttonProps.errorMessage) {
+    const errorMsg =
+      publishProposal.buttonProps.errorMessage === 'Unknown'
+        ? publishProposal.buttonProps.tooltipContent || 'Unknown error'
+        : publishProposal.buttonProps.errorMessage;
+    errors.push(errorMsg);
+  }
+
+  // Add core messages validation errors
+  if (coreMessagesSimulation.error) {
+    errors.push(`Action Validation: ${coreMessagesSimulation.error}`);
+  }
+
+  // Add individual choice errors if present
+  if (coreMessagesSimulation.choiceErrors) {
+    coreMessagesSimulation.choiceErrors.forEach(
+      (choiceError: { error: string; errorData?: any }, index: number) => {
+        errors.push(`Choice ${index + 1}: ${choiceError.error}`);
+      },
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Button variant="outline" onClick={handleClearDraft}>
+          Clear Draft
+        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setActiveTab(activeTab === 'edit' ? 'preview' : 'edit')}
+            className="gap-2"
+          >
+            {activeTab === 'edit' ? (
+              <>
+                <Eye className="h-4 w-4" />
+                Preview
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4" />
+                Edit
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={handlePublish}
+            disabled={
+              publishProposal.buttonProps.disabled ||
+              publishProposal.result.loading ||
+              coreMessagesSimulation.loading ||
+              !coreMessagesSimulation.success
+            }
+            className="gap-2"
+          >
+            {publishProposal.simulation.loading || coreMessagesSimulation.loading ? (
+              <>
+                {' '}
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Simulating...
+              </>
+            ) : publishProposal.result.loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              'Publish Proposal'
+            )}
+          </Button>
+        </div>
+      </div>
+      <ErrorDisplay errors={errors} title="Validation Errors" />
+    </div>
+  );
+}
 
 export function ProposalCreatePage() {
   usePageMeta('proposal-create', 'Create Proposal');
   const { address: daoAddress } = useParams<{ address: string }>();
+  const senderAddress = useAddress(Chain.Terra);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [insertAfterIndex, setInsertAfterIndex] = useState<number | null>(null);
   const [activeChoiceIndex, setActiveChoiceIndex] = useState<number | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [draft, setDraft] = useState<ProposalDraft>(() => {
     if (daoAddress) {
       const loadedDraft = loadDraft(daoAddress) || getEmptyDraft();
@@ -50,7 +165,6 @@ export function ProposalCreatePage() {
     }
     return getEmptyDraft();
   });
-  const [isPublishing, setIsPublishing] = useState(false);
 
   // App fullscreen state
   const [appFullscreen, setAppFullscreen] = useState(false);
@@ -127,28 +241,31 @@ export function ProposalCreatePage() {
   useEffect(() => {
     const duplicateParam = searchParams.get('data');
 
-    if (duplicateParam && daoAddress) {
-      try {
-        const duplicateData = JSON.parse(duplicateParam);
-        setDraft({
-          title: `Copy of ${duplicateData.title}`,
-          description: duplicateData.description,
-          proposalType: duplicateData.proposalType,
-          actions: duplicateData.actions,
-          choices: duplicateData.choices,
-          lastModified: Date.now(),
-        });
-        toast.success('Proposal duplicated successfully');
-      } catch (error) {
-        console.error('Failed to parse duplicate data:', error);
-        toast.error('Failed to duplicate proposal');
-      }
-      // Remove the query param after applying
-      const newSearchParams = new URLSearchParams(searchParams);
-      newSearchParams.delete('data');
-      setSearchParams(newSearchParams, { replace: true });
+    // Only run if there's actually a duplicate param to process
+    if (!duplicateParam || !daoAddress) return;
+
+    try {
+      const duplicateData = JSON.parse(duplicateParam);
+      setDraft({
+        title: `Copy of ${duplicateData.title}`,
+        description: duplicateData.description,
+        proposalType: duplicateData.proposalType,
+        actions: duplicateData.actions,
+        choices: duplicateData.choices,
+        lastModified: Date.now(),
+      });
+      toast.success('Proposal duplicated successfully');
+    } catch (error) {
+      console.error('Failed to parse duplicate data:', error);
+      toast.error('Failed to duplicate proposal');
     }
-  }, [searchParams, daoAddress, setSearchParams]);
+
+    // Remove the query param after applying
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete('data');
+    setSearchParams(newSearchParams, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get('data'), daoAddress]);
 
   const updateDraft = (updates: Partial<ProposalDraft>) => {
     setDraft((prev) => ({ ...prev, ...updates }));
@@ -279,37 +396,160 @@ export function ProposalCreatePage() {
     updateDraft({ choices: newChoices });
   };
 
-  const handlePublish = async () => {
-    if (!draft.title.trim()) {
-      toast.error('Please enter a proposal title');
-      return;
+  // Get the proposal module address based on type
+  const proposalModuleAddress = daoState.data.value?.proposal_modules.find(
+    (m) =>
+      m.status === 'enabled' &&
+      ((draft.proposalType === 'single' && m.prefix === 'A') ||
+        (draft.proposalType === 'multiple' && m.prefix === 'B')),
+  )?.address;
+
+  // Get proposal creation policy to check for pre-proposal module
+  const creationPolicy = useProposalCreationPolicy(proposalModuleAddress);
+  const preProposalModuleAddress = creationPolicy.data.value?.module?.addr;
+
+  // Extract core messages (the actual actions to execute)
+  const coreMessages = useMemo(() => {
+    if (draft.proposalType === 'single') {
+      return draft.actions.map((a) => a.data);
     }
+    // For multiple choice, return array of message arrays
+    return draft.choices.map((choice) => choice.actions.map((a) => a.data as UnifiedCosmosMsg));
+  }, [draft.proposalType, draft.actions, draft.choices]);
 
-    setIsPublishing(true);
-    try {
-      // TODO: Implement actual proposal submission
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+  // Memoize the choices array for multiple choice proposals to prevent unnecessary re-renders
+  const simulationChoices = useMemo(
+    () =>
+      draft.proposalType === 'multiple'
+        ? draft.choices.map((choice, i) => ({
+            actions: (coreMessages as UnifiedCosmosMsg[][])[i] || [],
+          }))
+        : [],
+    [draft.proposalType, draft.choices, coreMessages],
+  );
 
+  // Simulate core messages directly against DAO core to validate they will work
+  const coreMessagesSimulation = useProposalActionsSimulation(
+    daoAddress,
+    draft.proposalType,
+    draft.proposalType === 'single' ? (coreMessages as UnifiedCosmosMsg[]) : [],
+    simulationChoices,
+    500,
+  );
+
+  // Build proposal messages
+  const proposalMessages = useMemo(() => {
+    if (!proposalModuleAddress || !senderAddress) return [];
+
+    // Build the base proposal message
+    const baseProposalMsg =
+      draft.proposalType === 'single'
+        ? ({
+            propose: {
+              title: draft.title,
+              description: draft.description,
+              msgs: coreMessages as UnifiedCosmosMsg[],
+            },
+          } as ExecuteMsg)
+        : ({
+            propose: {
+              title: draft.title,
+              description: draft.description,
+              choices: {
+                options: draft.choices.map(
+                  (choice, i): MultipleChoiceOption => ({
+                    title: choice.title,
+                    description: choice.description,
+                    msgs: (coreMessages as UnifiedCosmosMsg[][])[i] || [],
+                  }),
+                ),
+              },
+            },
+          } as ExecuteMsgMulti);
+
+    // If there's a pre-proposal module, wrap the message
+    const targetContract = preProposalModuleAddress || proposalModuleAddress;
+    const executeMsg = preProposalModuleAddress
+      ? {
+          propose: {
+            msg: baseProposalMsg,
+          },
+        }
+      : baseProposalMsg;
+
+    return [
+      new MsgExecuteContract({
+        sender: senderAddress,
+        contract: targetContract,
+        msg: executeMsg,
+        funds: [],
+      }),
+    ];
+  }, [
+    proposalModuleAddress,
+    preProposalModuleAddress,
+    senderAddress,
+    draft.title,
+    draft.description,
+    draft.proposalType,
+    draft.choices,
+    coreMessages,
+  ]);
+  const isProposalValid = !!draft.title.trim() && !!proposalModuleAddress;
+  const areActionsValid = coreMessagesSimulation.success && !coreMessagesSimulation.loading;
+
+  // // Debug: Track what's causing re-renders
+  // useEffect(() => {
+  //   console.log('🔄 Render triggered - proposalMessages changed', proposalMessages.length);
+  // }, [proposalMessages]);
+
+  // useEffect(() => {
+  //   console.log('🔄 Render triggered - draft changed', draft.lastModified);
+  // }, [draft]);
+
+  // useEffect(() => {
+  //   console.log('🔄 Render triggered - searchParams changed', searchParams.toString());
+  // }, [searchParams]);
+
+  const publishProposal = useTx(proposalMessages, {
+    title: 'Publish Proposal',
+    chainId: Chain.Terra,
+    valid: isProposalValid && areActionsValid,
+    debounceTime: 500,
+    onTxSuccess: () => {
       toast.success('Proposal published successfully!');
       if (daoAddress) {
         clearDraft(daoAddress);
       }
       navigate(`/dao/${daoAddress}/proposals`);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to publish proposal');
-    } finally {
-      setIsPublishing(false);
+    },
+    onTxError: (error) => {
+      toast.error(error?.message || 'Failed to publish proposal');
+    },
+  });
+
+  const handlePublish = () => {
+    if (!draft.title.trim()) {
+      toast.error('Please enter a proposal title');
+      return;
     }
+    if (!proposalModuleAddress) {
+      toast.error('No proposal module found for this proposal type');
+      return;
+    }
+    publishProposal.broadcast();
   };
 
   const handleClearDraft = () => {
-    if (confirm('Are you sure you want to clear this draft? This cannot be undone.')) {
-      setDraft(getEmptyDraft());
-      if (daoAddress) {
-        clearDraft(daoAddress);
-      }
-      toast.success('Draft cleared');
+    setShowClearConfirm(true);
+  };
+
+  const confirmClearDraft = () => {
+    setDraft(getEmptyDraft());
+    if (daoAddress) {
+      clearDraft(daoAddress);
     }
+    toast.success('Draft cleared');
   };
 
   return (
@@ -489,28 +729,31 @@ export function ProposalCreatePage() {
                   draft.choices.map((choice, choiceIndex) => (
                     <Card key={choice.id}>
                       <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Label>Option {choiceIndex + 1} Title *</Label>
-                            </div>
-                            <Input
-                              value={choice.title}
-                              onChange={(e) => updateChoice(choiceIndex, { title: e.target.value })}
-                              placeholder="Enter option title..."
-                            />
-                          </div>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-base">
+                            {choice.title || `Option ${choiceIndex + 1}`}
+                          </CardTitle>
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon-sm"
                             onClick={() => removeChoice(choiceIndex)}
-                            className="text-destructive hover:text-destructive"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
                           >
-                            Remove
+                            <X className="h-4 w-4" />
                           </Button>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`choice-${choiceIndex}-title`}>Title *</Label>
+                          <Input
+                            id={`choice-${choiceIndex}-title`}
+                            value={choice.title}
+                            onChange={(e) => updateChoice(choiceIndex, { title: e.target.value })}
+                            placeholder="Enter option title..."
+                          />
+                        </div>
+
                         <div className="space-y-2">
                           <Label>Description</Label>
                           <MarkdownEditor
@@ -578,21 +821,14 @@ export function ProposalCreatePage() {
             )}
 
             {/* Publish Actions */}
-            <div className="flex items-center justify-between">
-              <Button variant="outline" onClick={handleClearDraft}>
-                Clear Draft
-              </Button>
-              <Button onClick={handlePublish} disabled={isPublishing} className="gap-2">
-                {isPublishing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Publishing...
-                  </>
-                ) : (
-                  'Publish Proposal'
-                )}
-              </Button>
-            </div>
+            <PublishActions
+              publishProposal={publishProposal}
+              handlePublish={handlePublish}
+              handleClearDraft={handleClearDraft}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              coreMessagesSimulation={coreMessagesSimulation}
+            />
           </TabsContent>
 
           <TabsContent value="preview" className="mt-0">
@@ -604,17 +840,15 @@ export function ProposalCreatePage() {
               choices={draft.choices}
             />
 
-            <div className="mt-6 flex justify-end">
-              <Button onClick={handlePublish} disabled={isPublishing} className="gap-2">
-                {isPublishing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Publishing...
-                  </>
-                ) : (
-                  'Publish Proposal'
-                )}
-              </Button>
+            <div className="mt-6">
+              <PublishActions
+                publishProposal={publishProposal}
+                handlePublish={handlePublish}
+                handleClearDraft={handleClearDraft}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                coreMessagesSimulation={coreMessagesSimulation}
+              />
             </div>
           </TabsContent>
         </Tabs>
@@ -674,6 +908,18 @@ export function ProposalCreatePage() {
             showMenuButton={false}
           />
         )}
+
+        {/* Clear Draft Confirmation Modal */}
+        <ConfirmModal
+          open={showClearConfirm}
+          onOpenChange={setShowClearConfirm}
+          onConfirm={confirmClearDraft}
+          title="Clear Draft?"
+          description="Are you sure you want to clear this draft? This action cannot be undone and all unsaved changes will be lost."
+          confirmText="Clear Draft"
+          cancelText="Cancel"
+          variant="destructive"
+        />
       </div>
     </ProposalFormProvider>
   );
