@@ -254,9 +254,13 @@ export function ProposalMembership({
                 size="sm"
                 variant="outline"
                 className="flex-1 border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
-                onClick={() => {
+                onClick={async () => {
                   setIsProcessing(true);
-                  voteYesTx.broadcast();
+                  try {
+                    await voteYesTx.broadcast();
+                  } finally {
+                    setIsProcessing(false);
+                  }
                 }}
                 disabled={isProcessing}
               >
@@ -266,9 +270,13 @@ export function ProposalMembership({
                 size="sm"
                 variant="outline"
                 className="flex-1 border-red-600 text-red-600 hover:bg-red-600 hover:text-white"
-                onClick={() => {
+                onClick={async () => {
                   setIsProcessing(true);
-                  voteNoTx.broadcast();
+                  try {
+                    await voteNoTx.broadcast();
+                  } finally {
+                    setIsProcessing(false);
+                  }
                 }}
                 disabled={isProcessing}
               >
@@ -278,9 +286,13 @@ export function ProposalMembership({
                 size="sm"
                 variant="outline"
                 className="flex-1"
-                onClick={() => {
+                onClick={async () => {
                   setIsProcessing(true);
-                  voteAbstainTx.broadcast();
+                  try {
+                    await voteAbstainTx.broadcast();
+                  } finally {
+                    setIsProcessing(false);
+                  }
                 }}
                 disabled={isProcessing}
               >
@@ -298,9 +310,13 @@ export function ProposalMembership({
           <div>
             <Button
               className="w-full"
-              onClick={() => {
+              onClick={async () => {
                 setIsProcessing(true);
-                executeTx.broadcast();
+                try {
+                  await executeTx.broadcast();
+                } finally {
+                  setIsProcessing(false);
+                }
               }}
               disabled={isProcessing}
             >
