@@ -126,12 +126,10 @@ export function ProposalCreatePage() {
   // Handle duplicate query param
   useEffect(() => {
     const duplicateParam = searchParams.get('data');
-    console.log('🚀 ~ ProposalCreatePage ~ duplicateData:', duplicateParam, daoAddress);
 
     if (duplicateParam && daoAddress) {
       try {
         const duplicateData = JSON.parse(duplicateParam);
-        console.log('🚀 ~ ProposalCreatePage ~ duplicateData:', duplicateData);
         setDraft({
           title: `Copy of ${duplicateData.title}`,
           description: duplicateData.description,
@@ -147,7 +145,7 @@ export function ProposalCreatePage() {
       }
       // Remove the query param after applying
       const newSearchParams = new URLSearchParams(searchParams);
-      // newSearchParams.delete('data');
+      newSearchParams.delete('data');
       setSearchParams(newSearchParams, { replace: true });
     }
   }, [searchParams, daoAddress, setSearchParams]);

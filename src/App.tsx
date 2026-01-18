@@ -4,8 +4,10 @@ import { ShuttleProvider } from '@/delphi-labs/shuttle-react';
 import { triggerReload } from '@/hooks/useReload';
 import { ModalServiceProvider } from '@/lib/modal-service-provider';
 import { ThemeProvider } from '@/lib/theme-provider';
+import { useTheme } from '@/lib/useTheme';
 import { extensionProviders, mobileProviders } from '@/wallet/shuttle';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { DaoPage } from './pages/dao/DaoPage';
 import { ProposalCreatePage } from './pages/dao/ProposalCreatePage';
 import { ProposalDetailPage } from './pages/dao/ProposalDetailPage';
@@ -19,9 +21,11 @@ if (import.meta.hot) {
   });
 }
 
-function App() {
+function AppContent() {
+  const { theme } = useTheme();
+  
   return (
-    <ThemeProvider defaultTheme="system" storageKey="daodao-ui-theme">
+    <>
       <ShuttleProvider
         extensionProviders={extensionProviders}
         mobileProviders={mobileProviders}
@@ -45,6 +49,22 @@ function App() {
           </BrowserRouter>
         </ModalServiceProvider>
       </ShuttleProvider>
+      <Toaster 
+        position="top-right" 
+        theme={theme === 'system' ? 'system' : theme}
+        richColors 
+        closeButton 
+        expand 
+        visibleToasts={5} 
+      />
+    </>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider defaultTheme="system" storageKey="daodao-ui-theme">
+      <AppContent />
     </ThemeProvider>
   );
 }

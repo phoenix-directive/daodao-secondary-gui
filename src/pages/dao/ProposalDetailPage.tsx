@@ -201,17 +201,11 @@ export function ProposalDetailPage() {
                   <span className="text-sm font-mono text-muted-foreground">
                     {prefix}-{proposal.id.toString().padStart(5, '0')}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={handleDuplicate}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Duplicate
-                    </Button>
-                    <ProposalStatusIcon
-                      status={status}
-                      showLabel={true}
-                      className="text-sm font-semibold shrink-0"
-                    />
-                  </div>
+                  <ProposalStatusIcon
+                    status={status}
+                    showLabel={true}
+                    className="text-sm font-semibold shrink-0"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-3xl wrap-break-word">
@@ -258,6 +252,13 @@ export function ProposalDetailPage() {
                     <ExternalLink className="h-4 w-4" />
                     View on DAO DAO
                   </a>
+                </div>
+
+                <div>
+                  <Button variant="outline" size="sm" onClick={handleDuplicate} className="w-full">
+                    <Copy className="h-4 w-4 mr-2" />
+                    Duplicate Proposal
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -354,6 +355,7 @@ export function ProposalDetailPage() {
               </div>
 
               <div>
+                <div className="text-sm font-medium text-muted-foreground mb-1">DAODAO</div>
                 <a
                   href={`https://daodao.zone/dao/${daoAddress}/proposals/${prefix}${proposal.id}`}
                   target="_blank"
@@ -363,6 +365,12 @@ export function ProposalDetailPage() {
                   <ExternalLink className="h-4 w-4" />
                   View on DAO DAO
                 </a>
+              </div>
+              <div>
+                <Button variant="outline" size="sm" onClick={handleDuplicate} className="w-full">
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate Proposal
+                </Button>
               </div>
             </CardContent>
           </Card>

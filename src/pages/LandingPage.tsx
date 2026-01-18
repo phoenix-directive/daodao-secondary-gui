@@ -100,22 +100,26 @@ export function LandingPage() {
 
         {/* Search Section */}
         <div className="mx-auto mb-16 max-w-3xl">
-          <Card className="border-2">
-            <CardContent className="p-6">
+          <Card className="border-2 shadow-lg">
+            <CardContent className="p-4 sm:p-6">
               <form onSubmit={handleSearch}>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:gap-2">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                     <Input
                       type="text"
                       value={searchAddress}
                       onChange={(e) => setSearchAddress(e.target.value)}
                       placeholder="Enter DAO address..."
-                      className="h-12 pl-10 text-base"
+                      className="h-12 pl-12 pr-4 text-base transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/20"
                     />
                   </div>
-                  <Button type="submit" size="lg" className="px-8">
-                    <span className="mr-2">Go</span>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="h-12 px-8 font-semibold transition-all duration-200 active:scale-95"
+                  >
+                    <span className="mr-2">Search</span>
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
