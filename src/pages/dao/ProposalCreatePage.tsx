@@ -40,6 +40,35 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
+// Types for prefill data structure
+interface PrefillFund {
+  denom: string;
+  amount: string;
+  decimals: number;
+}
+
+interface PrefillActionData {
+  _id: string;
+  actionKey: string;
+  data: {
+    chainId: string;
+    sender: string;
+    address: string;
+    message: string;
+    funds: PrefillFund[];
+    cw20: boolean;
+  };
+}
+
+interface PrefillData {
+  id: 'DaoProposalSingle';
+  data: {
+    title: string;
+    description: string;
+    actionData: PrefillActionData[];
+  };
+}
+
 // Reusable publish actions component
 function PublishActions({
   publishProposal,
@@ -266,6 +295,68 @@ export function ProposalCreatePage() {
     setSearchParams(newSearchParams, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.get('data'), daoAddress]);
+
+  // Handle prefill query param (DaoProposalSingle format)
+  useEffect(() => {
+    const prefillParam = searchParams.get('prefill');
+
+    // Only run if there's actually a prefill param to process
+    if (!prefillParam || !daoAddress) return;
+
+    try {
+      const prefillData = JSON.parse(prefillParam) as PrefillData;
+
+      // Validate it's a DaoProposalSingle format
+      if (prefillData.id !== 'DaoProposalSingle' || !prefillData.data) {
+        throw new Error('Invalid prefill format');
+      }
+
+      // Convert actionData to ProposalAction format
+      const actions: ProposalAction[] = prefillData.data.actionData.map((actionItem) => {
+        // Parse the message JSON string
+        const messageObj = JSON.parse(actionItem.data.message);
+
+        // Convert funds to base units (multiply by 10^decimals)
+        const funds = actionItem.data.funds.map((fund) => ({
+          denom: fund.denom,
+          amount: Math.floor(parseFloat(fund.amount) * Math.pow(10, fund.decimals || 6)).toString(),
+        }));
+
+        // Create UnifiedCosmosMsg in wasm execute format
+        return {
+          id: crypto.randomUUID(),
+          data: {
+            wasm: {
+              execute: {
+                contract_addr: actionItem.data.address,
+                msg: Buffer.from(JSON.stringify(messageObj)).toString('base64'),
+                funds,
+              },
+            },
+          },
+        };
+      });
+
+      setDraft({
+        title: prefillData.data.title || '',
+        description: prefillData.data.description || '',
+        proposalType: 'single',
+        actions,
+        choices: [],
+        lastModified: Date.now(),
+      });
+      toast.success('Proposal prefilled successfully');
+    } catch (error) {
+      console.error('Failed to parse prefill data:', error);
+      toast.error('Failed to prefill proposal');
+    }
+
+    // Remove the query param after applying
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete('prefill');
+    setSearchParams(newSearchParams, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get('prefill'), daoAddress]);
 
   const updateDraft = (updates: Partial<ProposalDraft>) => {
     setDraft((prev) => ({ ...prev, ...updates }));
