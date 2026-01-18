@@ -223,7 +223,7 @@ export function MultiTokenAmountPicker({
 }: MultiTokenAmountPickerProps) {
   // Internal state to track modes
   const [valueModes, setValueModes] = useState<('standard' | 'custom')[]>(() =>
-    values.map((v) => v.mode || 'standard')
+    values.map((v) => v.mode || 'standard'),
   );
 
   // Sync modes when values change from outside

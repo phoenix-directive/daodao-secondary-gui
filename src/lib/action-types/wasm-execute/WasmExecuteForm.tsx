@@ -1,10 +1,7 @@
+import { MultiTokenAmountPicker, type TokenAmount } from '@/components/custom/TokenAmountPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  MultiTokenAmountPicker,
-  type TokenAmount,
-} from '@/components/custom/TokenAmountPicker';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useProposalFormContext } from '@/lib/proposal-form-context';
 import { useTheme } from '@/lib/useTheme';
@@ -104,7 +101,8 @@ export function WasmExecuteForm({
           showMaxButton={true}
         />
         <p className="text-xs text-muted-foreground">
-          Use the settings button to switch between standard (with decimals) and custom (raw base units) mode per coin
+          Use the settings button to switch between standard (with decimals) and custom (raw base
+          units) mode per coin
         </p>
       </div>
       <div className="space-y-2">

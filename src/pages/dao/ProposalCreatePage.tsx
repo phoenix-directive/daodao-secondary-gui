@@ -296,24 +296,31 @@ export function ProposalCreatePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.get('data'), daoAddress]);
 
-  // Handle prefill query param (DaoProposalSingle format)
+  // Handle prefill from query param (?prefill=...) or hash fragment (#preload=...)
   useEffect(() => {
     const prefillParam = searchParams.get('prefill');
 
-    // Only run if there's actually a prefill param to process
-    if (!prefillParam || !daoAddress) return;
+    // Check hash fragment for #prefill=...
+    const hash = window.location.hash;
+    const hashMatch = hash.match(/^#prefill=(.+)$/);
+    const preloadParam = hashMatch ? decodeURIComponent(hashMatch[1]) : null;
+
+    const dataToLoad = preloadParam || prefillParam;
+
+    // Only run if there's actually data to process
+    if (!dataToLoad || !daoAddress) return;
 
     try {
       // Check if it's base64 encoded (try to decode, if it fails, treat as regular JSON)
-      let decodedParam = prefillParam;
+      let decodedParam = dataToLoad;
       try {
         // Test if it's valid base64 by trying to decode
-        const decoded = atob(prefillParam);
+        const decoded = atob(dataToLoad);
         // If successful, use the decoded version
         decodedParam = decoded;
       } catch {
         // Not base64, use as-is (URL-encoded JSON)
-        decodedParam = prefillParam;
+        decodedParam = dataToLoad;
       }
 
       const prefillData = JSON.parse(decodedParam) as PrefillData;
@@ -363,12 +370,18 @@ export function ProposalCreatePage() {
       toast.error('Failed to prefill proposal');
     }
 
-    // Remove the query param after applying
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.delete('prefill');
-    setSearchParams(newSearchParams, { replace: true });
+    // Clean up: remove query param and/or clear hash
+    if (prefillParam) {
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('prefill');
+      setSearchParams(newSearchParams, { replace: true });
+    }
+    if (preloadParam) {
+      // Clear the hash fragment
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.get('prefill'), daoAddress]);
+  }, [searchParams.get('prefill'), window.location.hash, daoAddress]);
 
   const updateDraft = (updates: Partial<ProposalDraft>) => {
     setDraft((prev) => ({ ...prev, ...updates }));
