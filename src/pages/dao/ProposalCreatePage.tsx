@@ -310,6 +310,8 @@ export function ProposalCreatePage() {
     // Only run if there's actually data to process
     if (!dataToLoad || !daoAddress) return;
 
+    console.log('Prefilling proposal with data:', dataToLoad);
+
     try {
       // Check if it's base64 encoded (try to decode, if it fails, treat as regular JSON)
       let decodedParam = dataToLoad;
