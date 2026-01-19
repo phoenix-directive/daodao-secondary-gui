@@ -1,6 +1,6 @@
 import { ProposalMembership } from '@/components/custom/proposal-membership';
 import { ProposalMessage } from '@/components/custom/proposal-message';
-import { VotesList } from '@/components/custom/proposals/votes-list';
+import { VotesListAll } from '@/components/custom/proposals/votes-list-all';
 import { VotingResults } from '@/components/custom/voting-results';
 import { AddressLink } from '@/components/ui/address-link';
 import { Button } from '@/components/ui/button';
@@ -328,7 +328,7 @@ export function ProposalDetailPage() {
 
           {/* Votes List */}
           {proposalModuleAddress && numericId !== null && (
-            <VotesList
+            <VotesListAll
               proposalModuleAddress={proposalModuleAddress}
               proposalId={numericId}
               totalPower={proposal.proposal.total_power}

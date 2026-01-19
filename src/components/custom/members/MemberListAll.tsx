@@ -18,7 +18,7 @@ import {
 import { createVotingModuleAdapter } from '@/lib/voting-modules/adapter-factory';
 import { VotingModuleType } from '@/lib/voting-modules/constants';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import {
   MemberListCard,
   MemberListEmpty,
@@ -32,7 +32,7 @@ interface MemberListAllProps {
   title?: string;
 }
 
-export function MemberListAll({ votingModuleAddress, title = 'Members' }: MemberListAllProps) {
+function MemberListAllComponent({ votingModuleAddress, title = 'Members' }: MemberListAllProps) {
   const chain = useChain(Chain.Terra);
 
   const [members, setMembers] = useState<MemberWithPercentage[]>([]);
@@ -50,6 +50,21 @@ export function MemberListAll({ votingModuleAddress, title = 'Members' }: Member
       desc: true,
     },
   ]);
+
+  // // 🐛 DEBUG: Track what causes rerenders
+  // useWhyDidYouUpdate('MemberListAll', {
+  //   votingModuleAddress,
+  //   title,
+  //   chain,
+  //   members,
+  //   isLoading,
+  //   error,
+  //   isSupported,
+  //   total,
+  //   votingModuleType,
+  //   decimals,
+  //   sorting,
+  // });
 
   // Fetch all members
   useEffect(() => {
@@ -84,7 +99,7 @@ export function MemberListAll({ votingModuleAddress, title = 'Members' }: Member
         // Calculate percentages using shared utility
         const membersWithPercentage = calculateMemberPercentages(response.members, currentTotal);
 
-        setMembers(membersWithPercentage);
+        setMembers(membersWithPercentage.filter((a) => a.percentage > 0));
       } catch (err: any) {
         console.error('Failed to fetch members:', err);
         setError(err.message || 'Failed to load members');
@@ -172,3 +187,4 @@ export function MemberListAll({ votingModuleAddress, title = 'Members' }: Member
   );
 }
 
+export const MemberListAll = memo(MemberListAllComponent);

@@ -10,7 +10,7 @@ import svgr from 'vite-plugin-svgr';
 // Plugin to generate a build hash and write it to public/version.json
 function versionHashPlugin(): Plugin {
   let buildHash = '';
-  
+
   return {
     name: 'version-hash',
     buildStart() {

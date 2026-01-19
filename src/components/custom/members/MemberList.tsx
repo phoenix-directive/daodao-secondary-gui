@@ -188,38 +188,40 @@ export function MemberList({ votingModuleAddress, title = 'Members' }: MemberLis
       {/* Pagination */}
       {(startAfter || hasMore) && (
         <div className="flex items-center justify-between p-4 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={
-                isDeepLinked && paginationHistory.length === 0 ? goToFirstPage : goToPreviousPage
-              }
-              disabled={!startAfter || isLoading}
-            >
-              {isDeepLinked && paginationHistory.length === 0 ? 'First Page' : 'Previous'}
-            </Button>
-            {startAfter ? (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">After:</span>
-                {startAfter.startsWith('terra1') ? (
-                  <AddressLink address={startAfter} />
-                ) : (
-                  <span className="font-mono text-muted-foreground truncate max-w-[200px]">
-                    {startAfter}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <span className="text-sm text-muted-foreground font-medium">Page 1</span>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToNextPage}
-              disabled={!hasMore || isLoading}
-            >
-              Next
-            </Button>
-          </div>
-        )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={
+              isDeepLinked && paginationHistory.length === 0 ? goToFirstPage : goToPreviousPage
+            }
+            disabled={!startAfter || isLoading}
+          >
+            {isDeepLinked && paginationHistory.length === 0 ? 'First Page' : 'Previous'}
+          </Button>
+          {startAfter ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">After:</span>
+              {startAfter.startsWith('terra1') ? (
+                <AddressLink address={startAfter} />
+              ) : (
+                <span className="font-mono text-muted-foreground truncate max-w-[200px]">
+                  {startAfter}
+                </span>
+              )}
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground font-medium">Page 1</span>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goToNextPage}
+            disabled={!hasMore || isLoading}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </MemberListCard>
+  );
+}

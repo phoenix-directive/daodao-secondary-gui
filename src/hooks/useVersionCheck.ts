@@ -33,12 +33,10 @@ export function useVersionCheck() {
           initialVersion = data.hash;
           console.log('[Version Check] Compiled version:', COMPILED_VERSION);
           console.log('[Version Check] Initial server version:', initialVersion);
-          
+
           // If compiled version exists and differs from server, reload immediately
           if (COMPILED_VERSION && COMPILED_VERSION !== initialVersion) {
-            console.log(
-              '[Version Check] Compiled version mismatch detected. Reloading...'
-            );
+            console.log('[Version Check] Compiled version mismatch detected. Reloading...');
             window.location.reload();
           }
         }
@@ -57,7 +55,7 @@ export function useVersionCheck() {
         });
         if (response.ok) {
           const data: VersionInfo = await response.json();
-          
+
           // Check against both compiled version and initial fetched version
           const currentVersion = COMPILED_VERSION || initialVersion;
           if (currentVersion && data.hash !== currentVersion) {

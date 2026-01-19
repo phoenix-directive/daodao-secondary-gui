@@ -6,7 +6,10 @@ import { PairResponse } from './read.model';
 
 export class ReadService {
   chain: Chain;
-  constructor(private cache: CacheService, public clients: ChainInfo) {
+  constructor(
+    private cache: CacheService,
+    public clients: ChainInfo,
+  ) {
     this.chain = clients.config.chain;
   }
 
@@ -107,6 +110,23 @@ export class ReadService {
       pagination: data.pagination || { next_key: null },
     };
   }
+
+  /**
+   * Query DAO contract for dump_state with configurable cache time
+   * @param daoAddress - The DAO contract address
+   * @param cacheTimeMin - Cache time in minutes (default: 24 hours)
+   */
+  dao = {
+    dumpState: <T = any>(daoAddress: string): Promise<T> => {
+      return this.queryCached<T>(
+        daoAddress,
+        {
+          dump_state: {},
+        },
+        24 * 60,
+      );
+    },
+  };
 
   query<T, T2 = any>(contract: string, query: T2): Promise<T> {
     const client = this.clients.wasmClient;

@@ -58,14 +58,7 @@ export const useDaoDaoState = (contractAddress: string | undefined) => {
   return useAsyncSignal(async () => {
     if (!contractAddress) return null;
 
-    const cacheTimeMin = 24 * 60; // 24 hours
-    const result = await chain.read.queryCached<DaoDaoDumpState>(
-      contractAddress,
-      {
-        dump_state: {},
-      },
-      cacheTimeMin,
-    );
+    const result = await chain.read.dao.dumpState<DaoDaoDumpState>(contractAddress);
 
     // Compute available proposal types based on enabled modules
     const modules = result?.proposal_modules || [];

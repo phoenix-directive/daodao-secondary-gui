@@ -2,6 +2,7 @@ import { UnifiedCosmosMsg } from '@/daodao/types/contracts';
 import { Chain } from '@/hooks/helpers/assets';
 import { ChainService } from '@/hooks/helpers/ChainService';
 import { getErrorMessageSync, tryGetJsonObjectEnd } from '@/hooks/helpers/helpers';
+import { useWhyDidYouUpdate } from '@/hooks/useWhyDidYouUpdate';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface ProposalActionsSimulationResult {
@@ -11,33 +12,6 @@ export interface ProposalActionsSimulationResult {
   errorData?: any;
   // For multiple choice proposals, track which choice has errors
   choiceErrors?: Map<number, { error: string; errorData?: any }>;
-}
-
-// Debug hook to track what's causing re-renders
-function useWhyDidYouUpdate(name: string, props: any) {
-  const previousProps = useRef<any>(undefined);
-
-  useEffect(() => {
-    if (previousProps.current) {
-      const allKeys = Object.keys({ ...previousProps.current, ...props });
-      const changedProps: any = {};
-
-      allKeys.forEach((key) => {
-        if (previousProps.current[key] !== props[key]) {
-          changedProps[key] = {
-            from: previousProps.current[key],
-            to: props[key],
-          };
-        }
-      });
-
-      if (Object.keys(changedProps).length > 0) {
-        console.log('[why-did-you-update]', name, changedProps);
-      }
-    }
-
-    previousProps.current = props;
-  });
 }
 
 /**

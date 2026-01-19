@@ -11,6 +11,7 @@ import { addRecentDao, isFavorite, toggleFavorite } from '@/lib/signals-instance
 import { AppsTab } from '@/pages/dao/tabs/AppsTab';
 import { MembersTab } from '@/pages/dao/tabs/MembersTab';
 import { ProposalsTab } from '@/pages/dao/tabs/ProposalsTab';
+import { SubDaosTab } from '@/pages/dao/tabs/SubDaosTab';
 import { TreasuryTab } from '@/pages/dao/tabs/TreasuryTab';
 import { Landmark, Loader2, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -32,7 +33,7 @@ export function DaoPage() {
   const daoImageUrl = daoData?.config.image_url;
 
   // Valid tabs
-  const validTabs = ['proposals', 'treasury', 'members', 'apps'];
+  const validTabs = ['proposals', 'treasury', 'members', 'subdaos', 'apps'];
   const activeTab = validTabs.includes(tab || '') ? (tab ?? '') : 'proposals';
 
   // Set page title
@@ -189,10 +190,11 @@ export function DaoPage() {
             onValueChange={handleTabChange}
             className="w-full flex flex-col flex-1"
           >
-            <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
               <TabsTrigger value="proposals">Proposals</TabsTrigger>
               <TabsTrigger value="treasury">Treasury</TabsTrigger>
               <TabsTrigger value="members">Members</TabsTrigger>
+              <TabsTrigger value="subdaos">Sub DAOs</TabsTrigger>
               <TabsTrigger value="apps">Apps</TabsTrigger>
             </TabsList>
 
@@ -207,6 +209,10 @@ export function DaoPage() {
 
               <TabsContent value="members" className="mt-0 flex-1">
                 <MembersTab />
+              </TabsContent>
+
+              <TabsContent value="subdaos" className="mt-0 flex-1">
+                <SubDaosTab />
               </TabsContent>
 
               <TabsContent value="apps" className="mt-0 flex-1 flex flex-col">
