@@ -11,56 +11,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Member } from '@/lib/voting-modules/types';
+import {
+  formatPercentage,
+  formatVotingPower,
+  getPercentageStyle,
+  type MemberWithPercentage,
+} from '@/lib/member-helpers';
 import { maxBy } from 'lodash-es';
 
 interface MemberTableProps {
-  members: (Member & { percentage: number })[];
+  members: MemberWithPercentage[];
   decimals?: number;
 }
 
-function formatNumber(value: number, decimals: number) {
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
-}
-
 export function MemberTable({ members, decimals = 6 }: MemberTableProps) {
-  const formatVotingPower = (power: string) => {
-    try {
-      if (!decimals) {
-        return power;
-      } else {
-        // return including full decimals so 10.000000
-        return formatNumber(
-          parseFloat((BigInt(power) / BigInt(10 ** decimals)).toString()),
-          decimals,
-        );
-      }
-    } catch (error) {
-      console.error('Error formatting voting power:', error);
-      return power;
-    }
-  };
-
   const max = maxBy(members, (a) => a.percentage)?.percentage || 100;
-
-  const getPercentageColor = (percentage: number) => {
-    // Normalize to 0-1 range, capping at 100%
-    const normalized = Math.min(percentage / max, 1);
-    // Use CSS custom property to blend between muted-foreground and primary
-    // Higher values get more opacity/prominence
-    return {
-      opacity: 0.7 + normalized * 0.3, // Range from 0.7 to 1
-      color: normalized > 0.3 ? 'var(--primary)' : 'var(--muted-foreground)',
-      fontWeight: normalized > 0.5 ? 600 : 500,
-    };
-  };
-
-  const formatPercentage = (percentage: number) => {
-    return percentage < 0.001 && percentage > 0 ? '<0.001' : percentage.toFixed(3);
-  };
 
   return (
     <div className="overflow-hidden border-t rounded-none">
@@ -83,11 +48,11 @@ export function MemberTable({ members, decimals = 6 }: MemberTableProps) {
                   <AddressLink address={member.address} allowTagging />
                 </TableCell>
                 <TableCell className="py-1 text-right font-medium ">
-                  {formatVotingPower(member.votingPower)}
+                  {formatVotingPower(member.votingPower, decimals)}
                 </TableCell>
                 <TableCell
                   className="py-1 text-right"
-                  style={getPercentageColor(member.percentage)}
+                  style={getPercentageStyle(member.percentage, max)}
                 >
                   {formatPercentage(member.percentage)}%
                 </TableCell>
@@ -99,3 +64,4 @@ export function MemberTable({ members, decimals = 6 }: MemberTableProps) {
     </div>
   );
 }
+

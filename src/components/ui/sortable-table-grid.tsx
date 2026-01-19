@@ -166,8 +166,8 @@ export function SortableTableGrid<TData>({
                   <div
                     key={cell.id}
                     className={cn(
-                      'flex items-center border-b p-4 text-sm transition-colors',
-                      condensedColumns && 'px-1',
+                      'flex items-center border-b py-1 text-sm transition-colors',
+                      condensedColumns ? 'px-1' : 'px-4',
                       isFirst && 'pl-6',
                       isLast && 'pr-6',
                       isLastRow && !detailContent && 'border-0',
@@ -176,7 +176,14 @@ export function SortableTableGrid<TData>({
                       cell.column.columnDef.meta?.align === 'center' && 'justify-center',
                       cell.column.columnDef.meta?.align === 'right' && 'justify-end',
                       onRowClick && 'cursor-pointer',
-                      enableRowHover && hoveredRowId.value === row.id && onRowClick && 'bg-muted/50',
+                      enableRowHover &&
+                        hoveredRowId.value === row.id &&
+                        onRowClick &&
+                        'bg-muted/70',
+                      !onRowClick &&
+                        enableRowHover &&
+                        hoveredRowId.value === row.id &&
+                        'bg-muted/70',
                       computedRowClassName,
                     )}
                     onClick={(ev) => {
@@ -228,3 +235,4 @@ export function SortableTableGrid<TData>({
 }
 
 export default SortableTableGrid;
+

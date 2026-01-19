@@ -1,4 +1,5 @@
 import { MemberList } from '@/components/custom/members/MemberList';
+import { MemberListAll } from '@/components/custom/members/MemberListAll';
 import { Card, CardContent } from '@/components/ui/card';
 import { useDaoDaoState } from '@/hooks/useDaoDao';
 import { AlertCircle } from 'lucide-react';
@@ -25,5 +26,6 @@ export function MembersTab() {
     );
   }
 
-  return <MemberList votingModuleAddress={daoData.voting_module} />;
+  return <MemberListAll votingModuleAddress={daoData.voting_module} />;
 }
+

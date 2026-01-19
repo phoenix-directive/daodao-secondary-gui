@@ -70,6 +70,35 @@ export class TokenStakedAdapter implements VotingModuleAdapter {
     };
   }
 
+  async fetchMembersAll(): Promise<MembersResponse> {
+    const allMembers: Member[] = [];
+    let startAfter: string | undefined = undefined;
+    const decimals = await this.fetchDecimals();
+
+    while (true) {
+      const response = await this.fetchMembers(1000, startAfter);
+      allMembers.push(...response.members);
+
+      if (!response.hasMore) {
+        break;
+      }
+
+      // Use last member's address as cursor for next page
+      const lastMember = response.members[response.members.length - 1];
+      if (lastMember) {
+        startAfter = lastMember.address;
+      } else {
+        break;
+      }
+    }
+
+    return {
+      members: allMembers,
+      hasMore: false,
+      decimals,
+    };
+  }
+
   async fetchDecimals(): Promise<number> {
     return 6;
   }

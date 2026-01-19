@@ -180,6 +180,34 @@ export class Cw721StakedAdapter implements VotingModuleAdapter {
     };
   }
 
+  async fetchMembersAll(): Promise<MembersResponse> {
+    const allMembers: Member[] = [];
+    let startAfter: string | undefined = undefined;
+    const decimals = await this.fetchDecimals();
+
+    while (true) {
+      const response = await this.fetchMembers(1000, startAfter);
+      allMembers.push(...response.members);
+
+      if (!response.hasMore) {
+        break;
+      }
+
+      // Use nextKey from response for CW721 (RPC pagination key)
+      if (response.nextKey) {
+        startAfter = response.nextKey;
+      } else {
+        break;
+      }
+    }
+
+    return {
+      members: allMembers,
+      hasMore: false,
+      decimals,
+    };
+  }
+
   async fetchDecimals(): Promise<number> {
     return 0;
   }

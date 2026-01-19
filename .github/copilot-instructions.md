@@ -169,6 +169,42 @@ Vite config includes Node.js polyfills (Buffer, process) for Cosmos SDK. Preact 
 - Feature folders over flat (e.g., `components/custom/proposals/`, not `ProposalCard.tsx` at root)
 - Index files re-export for clean imports
 - Action types must export both type definition AND ActionType object
+- **Keep utilities separate from components** for Fast Refresh: Pure utility functions go in `src/lib/`, React components stay in `src/components/`
+
+## Fast Refresh Best Practices
+
+To maintain Fast Refresh in development:
+
+- **Separate utilities from components**: Move pure functions (formatting, calculations, type guards) to `src/lib/` or `src/hooks/helpers/`
+- **Components-only files**: Files in `src/components/` should only export React components
+- **Re-export pattern**: Components can re-export utilities for convenience, but the source should be in `src/lib/`
+
+**Example:**
+
+```tsx
+// ❌ Bad: Breaks Fast Refresh
+// src/components/MyComponent.tsx
+export function formatData(data: string) {
+  /* ... */
+}
+export function MyComponent() {
+  /* uses formatData */
+}
+
+// ✅ Good: Maintains Fast Refresh
+// src/lib/data-helpers.ts
+export function formatData(data: string) {
+  /* ... */
+}
+
+// src/components/MyComponent.tsx
+import { formatData } from '@/lib/data-helpers';
+export function MyComponent() {
+  /* uses formatData */
+}
+```
+
+See `src/lib/member-helpers.ts` (utilities) + `src/components/custom/members/member-utils.tsx` (UI components) for reference.
 
 ## Reference Examples
 
@@ -180,3 +216,4 @@ Vite config includes Node.js polyfills (Buffer, process) for Cosmos SDK. Preact 
 ---
 
 **Questions?** Check file examples above or existing implementations in `src/lib/action-types/` for patterns.
+

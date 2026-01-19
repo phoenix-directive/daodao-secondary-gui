@@ -6,23 +6,24 @@
 import { MemberTable } from '@/components/custom/members/MemberTable';
 import { AddressLink } from '@/components/ui/address-link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Chain } from '@/hooks/helpers/assets';
 import { useChain } from '@/hooks/useChain';
+import { calculateMemberPercentages, type MemberWithPercentage } from '@/lib/member-helpers';
 import { createVotingModuleAdapter } from '@/lib/voting-modules/adapter-factory';
 import { VotingModuleType } from '@/lib/voting-modules/constants';
-import { Member } from '@/lib/voting-modules/types';
-import { AlertCircle, Loader2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import {
+  MemberListCard,
+  MemberListEmpty,
+  MemberListError,
+  MemberListLoading,
+  MemberListUnsupported,
+} from './member-utils';
 
 interface MemberListProps {
   votingModuleAddress: string;
   title?: string;
-}
-
-interface MemberWithPercentage extends Member {
-  percentage: number;
 }
 
 export function MemberList({ votingModuleAddress, title = 'Members' }: MemberListProps) {
@@ -94,20 +95,8 @@ export function MemberList({ votingModuleAddress, title = 'Members' }: MemberLis
         // Store decimals from adapter
         setDecimals(response.decimals);
 
-        // Calculate percentages
-        const totalBig = BigInt(currentTotal);
-        const membersWithPercentage = response.members.map((member) => {
-          const votingPowerBig = BigInt(member.votingPower);
-          const percentage =
-            totalBig > BigInt(0)
-              ? Number(votingPowerBig * BigInt(100000)) / Number(totalBig) / 1000
-              : 0;
-
-          return {
-            ...member,
-            percentage,
-          };
-        });
+        // Calculate percentages using shared utility
+        const membersWithPercentage = calculateMemberPercentages(response.members, currentTotal);
 
         setMembers(membersWithPercentage);
         setHasMore(response.hasMore);
@@ -183,87 +172,22 @@ export function MemberList({ votingModuleAddress, title = 'Members' }: MemberLis
     setIsDeepLinked(false);
   };
 
-  if (!isSupported) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8">
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="mb-2 text-lg font-semibold">Unsupported Voting Module</h3>
-            <p className="text-sm text-muted-foreground">
-              This DAO's voting module type is not yet supported for member display.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  if (!isSupported) return <MemberListUnsupported title={title} />;
 
   if (isLoading && members.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-            <p className="text-sm text-muted-foreground">Loading members...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <MemberListLoading title={title} />;
   }
 
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8">
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <h3 className="mb-2 text-lg font-semibold text-destructive">Error Loading Members</h3>
-            <p className="text-sm text-muted-foreground">{error}</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (members.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8">
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="mb-4 rounded-full bg-primary/10 p-4">
-              <Users className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="mb-2 text-lg font-semibold">No Members</h3>
-            <p className="text-sm text-muted-foreground">No members found in this DAO.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  if (error) return <MemberListError title={title} error={error} />;
+  if (members.length === 0) return <MemberListEmpty title={title} />;
 
   return (
-    <Card className="pb-0">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <MemberTable members={members} decimals={decimals} />
+    <MemberListCard title={title}>
+      <MemberTable members={members} decimals={decimals} />
 
-        {/* Pagination */}
-        {(startAfter || hasMore) && (
-          <div className="flex items-center justify-between p-4 border-t">
+      {/* Pagination */}
+      {(startAfter || hasMore) && (
+        <div className="flex items-center justify-between p-4 border-t">
             <Button
               variant="outline"
               size="sm"
@@ -298,7 +222,4 @@ export function MemberList({ votingModuleAddress, title = 'Members' }: MemberLis
             </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
-  );
-}
+    </MemberListCard>

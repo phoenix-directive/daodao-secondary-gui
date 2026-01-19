@@ -49,6 +49,13 @@ export interface VotingModuleAdapter {
    */
   fetchMembers(limit: number, startAfter?: string): Promise<MembersResponse>;
 
+  /**
+   * Fetch all members iteratively
+   * This method automatically handles pagination and fetches all members
+   * @returns Promise<MembersResponse> All members with hasMore always false
+   */
+  fetchMembersAll(): Promise<MembersResponse>;
+
   fetchDecimals(): Promise<number>;
 
   /**
