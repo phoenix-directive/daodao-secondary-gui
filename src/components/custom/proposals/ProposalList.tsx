@@ -9,7 +9,7 @@ import {
 import { Chain } from '@/hooks/helpers/assets';
 import { useChain } from '@/hooks/useChain';
 import { ChevronsLeft, Loader2, Plus } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 interface ProposalData {
@@ -50,24 +50,12 @@ export function ProposalList({
   const [hasMore, setHasMore] = useState(true);
   const [lowestId, setLowestId] = useState<number | null>(null);
 
-  // Track navigation history to determine if user arrived via navigation or direct load
+  // Track navigation history - stack stores start_after values (undefined = first page)
+  // Empty array means: user landed directly with params or hasn't navigated yet
   const [pageStack, setPageStack] = useState<(number | undefined)[]>([]);
-  const initialLoadRef = useRef(true);
+  const hasNavigationHistory = pageStack.length > 0;
 
   const limit = 10;
-
-  // Initialize page stack on mount
-  useEffect(() => {
-    if (initialLoadRef.current && startAfter !== undefined) {
-      // User loaded with a page param, so we don't have navigation history
-      setPageStack([]);
-      initialLoadRef.current = false;
-    } else if (initialLoadRef.current) {
-      // User loaded on first page
-      setPageStack([undefined]);
-      initialLoadRef.current = false;
-    }
-  }, [startAfter]);
 
   // Fetch proposals and config
   useEffect(() => {
@@ -226,33 +214,30 @@ export function ProposalList({
 
   const goToNext = () => {
     if (lowestId !== null) {
-      // Add current page to stack before navigating forward
+      // Push current page onto stack before navigating forward
       setPageStack((prev) => [...prev, startAfter]);
       updateSearchParams(lowestId);
     }
   };
 
   const goToPrevious = () => {
-    // Pop from stack to go to previous page
-    setPageStack((prev) => {
-      const newStack = [...prev];
-      const prevPage = newStack.pop();
-      return newStack;
-    });
-    const prevPage = pageStack[pageStack.length - 1];
-    updateSearchParams(prevPage);
+    // Pop stack and navigate to previous page
+    const newStack = [...pageStack];
+    const previousPage = newStack.pop();
+    setPageStack(newStack);
+    updateSearchParams(previousPage);
   };
 
   const goToFirst = () => {
     // Clear stack and go to first page
-    setPageStack([undefined]);
+    setPageStack([]);
     updateSearchParams();
   };
 
-  // Determine if we should show "First" button instead of "Previous"
-  // Show "First" when: user loaded with a param AND hasn't navigated yet (empty stack)
-  const showFirstButton = startAfter !== undefined && pageStack.length === 0;
-  const showPreviousButton = pageStack.length > 0;
+  // Show "First" button when: not on first page AND no navigation history
+  // Show "Previous" button when: have navigation history
+  const isOnFirstPage = startAfter === undefined;
+  const canGoBack = hasNavigationHistory && pageStack.length > 0;
 
   return (
     <Card className="pb-0">
@@ -273,9 +258,9 @@ export function ProposalList({
         <ProposalTable proposals={proposalData.proposals} prefix={prefix} />
 
         {/* Pagination */}
-        {(showFirstButton || showPreviousButton || hasMore) && (
+        {(!isOnFirstPage || hasMore) && (
           <div className="flex items-center justify-between p-4 border-t">
-            {showFirstButton ? (
+            {!hasNavigationHistory && !isOnFirstPage ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -291,7 +276,7 @@ export function ProposalList({
                 variant="outline"
                 size="sm"
                 onClick={goToPrevious}
-                disabled={!showPreviousButton || isLoading}
+                disabled={!canGoBack || isLoading}
               >
                 Previous
               </Button>
