@@ -125,9 +125,7 @@ export function SubDaosTab() {
               </CardHeader>
               {subDao.description && (
                 <CardContent className="pt-0">
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {subDao.description}
-                  </p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{subDao.description}</p>
                 </CardContent>
               )}
             </Card>

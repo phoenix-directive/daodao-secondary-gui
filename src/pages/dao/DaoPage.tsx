@@ -10,6 +10,7 @@ import { usePageMeta } from '@/hooks/usePageMeta';
 import { addRecentDao, isFavorite, toggleFavorite } from '@/lib/signals-instances';
 import { AppsTab } from '@/pages/dao/tabs/AppsTab';
 import { MembersTab } from '@/pages/dao/tabs/MembersTab';
+import { MembershipTab } from '@/pages/dao/tabs/MembershipTab';
 import { ProposalsTab } from '@/pages/dao/tabs/ProposalsTab';
 import { SubDaosTab } from '@/pages/dao/tabs/SubDaosTab';
 import { TreasuryTab } from '@/pages/dao/tabs/TreasuryTab';
@@ -33,7 +34,7 @@ export function DaoPage() {
   const daoImageUrl = daoData?.config.image_url;
 
   // Valid tabs
-  const validTabs = ['proposals', 'treasury', 'members', 'subdaos', 'apps'];
+  const validTabs = ['proposals', 'membership', 'treasury', 'members', 'subdaos', 'apps'];
   const activeTab = validTabs.includes(tab || '') ? (tab ?? '') : 'proposals';
 
   // Set page title
@@ -190,11 +191,12 @@ export function DaoPage() {
             onValueChange={handleTabChange}
             className="w-full flex flex-col flex-1"
           >
-            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+            <TabsList className="flex flex-wrap h-auto w-full lg:w-auto lg:inline-grid lg:grid-cols-6">
               <TabsTrigger value="proposals">Proposals</TabsTrigger>
-              <TabsTrigger value="treasury">Treasury</TabsTrigger>
+              <TabsTrigger value="membership">Membership</TabsTrigger>
               <TabsTrigger value="members">Members</TabsTrigger>
               <TabsTrigger value="subdaos">Sub DAOs</TabsTrigger>
+              <TabsTrigger value="treasury">Treasury</TabsTrigger>
               <TabsTrigger value="apps">Apps</TabsTrigger>
             </TabsList>
 
@@ -202,9 +204,8 @@ export function DaoPage() {
               <TabsContent value="proposals" className="mt-0 flex-1">
                 <ProposalsTab />
               </TabsContent>
-
-              <TabsContent value="treasury" className="mt-0 flex-1 flex flex-col">
-                <TreasuryTab daoAddress={address} daoName={daoName} />
+              <TabsContent value="membership" className="mt-0 flex-1">
+                <MembershipTab />
               </TabsContent>
 
               <TabsContent value="members" className="mt-0 flex-1">
@@ -213,6 +214,9 @@ export function DaoPage() {
 
               <TabsContent value="subdaos" className="mt-0 flex-1">
                 <SubDaosTab />
+              </TabsContent>
+              <TabsContent value="treasury" className="mt-0 flex-1 flex flex-col">
+                <TreasuryTab daoAddress={address} daoName={daoName} />
               </TabsContent>
 
               <TabsContent value="apps" className="mt-0 flex-1 flex flex-col">

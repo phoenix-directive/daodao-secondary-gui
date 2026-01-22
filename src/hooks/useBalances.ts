@@ -57,6 +57,28 @@ export const useBalances = (contractAddress: string | undefined) => {
 };
 
 /**
+ * Query a single balance for an address and denom
+ */
+export const useBalance = (
+  address: string | undefined,
+  denom: string | undefined
+) => {
+  const chain = useChain(Chain.Terra);
+
+  return useAsyncSignal(async () => {
+    if (!address || !denom) return '0';
+
+    try {
+      const balance = await chain.read.balance(address, denom);
+      return balance.amount;
+    } catch (error) {
+      console.error('Failed to fetch balance:', error);
+      return '0';
+    }
+  }, [address, denom, globalReload.value]);
+};
+
+/**
  * Convert from base units to human-readable decimal string
  * @param amount Amount in base units (e.g., "1000000" uluna)
  * @param decimals Number of decimal places (e.g., 6 for uluna)

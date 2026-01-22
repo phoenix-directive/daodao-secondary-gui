@@ -13,7 +13,7 @@ import { useChain } from '@/hooks/useChain';
 import { globalReload } from '@/hooks/useReload';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useMemo, useState, useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 interface VotesListAllProps {
   proposalModuleAddress: string;
@@ -114,15 +114,12 @@ export function VotesListAll({
     return voteMap[vote.toLowerCase()] || 'text-muted-foreground';
   }, []);
 
-  const formatNumber = useCallback(
-    (value: number, decimalsArg: number) => {
-      return new Intl.NumberFormat(undefined, {
-        minimumFractionDigits: decimalsArg,
-        maximumFractionDigits: decimalsArg,
-      }).format(value);
-    },
-    [],
-  );
+  const formatNumber = useCallback((value: number, decimalsArg: number) => {
+    return new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: decimalsArg,
+      maximumFractionDigits: decimalsArg,
+    }).format(value);
+  }, []);
 
   const formatPower = useCallback(
     (power: string) => {

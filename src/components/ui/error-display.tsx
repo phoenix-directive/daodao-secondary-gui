@@ -15,9 +15,12 @@ export const ErrorDisplay = ({
   errors,
   title,
 }: {
-  errors: (string | null | false | undefined)[];
+  errors: (string | null | false | undefined)[] | undefined;
   title?: string;
 }) => {
+  if(!errors) {
+    return null;
+  }
   const allErrors = errors.filter(notFalsy);
   return (
     allErrors.length > 0 && (

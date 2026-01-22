@@ -78,6 +78,7 @@ export interface TxHook<T = any> {
     errorData?: any;
     showTooltip?: boolean;
     tooltipContent?: string;
+    errors?: string[] | undefined;
   };
   simulate: () => Promise<SimulateResult & { loading: false }>;
   broadcast: () => Promise<TxResult>;
@@ -329,6 +330,11 @@ export function useTx<T>(messages: TransactionMsg[], options: UseTxOptions<T>) {
         ? getErrorInformationMessage(errorMessage as string)
         : undefined;
 
+    const errorMsg =
+      simulationErrorMessage === 'Unknown'
+        ? simulationInformationErrorMessage || 'Unknown error'
+        : errorMessage;
+
     return {
       loading: result.loading || (simulation.loading ?? false),
       disabled:
@@ -339,6 +345,7 @@ export function useTx<T>(messages: TransactionMsg[], options: UseTxOptions<T>) {
       errorData,
       showTooltip: !simulation.loading && simulation.error !== undefined,
       tooltipContent: simulationInformationErrorMessage,
+      errors: errorMsg ? [errorMsg] : undefined,
     };
   }, [simulation, result, messages, broadcast, isValid]);
 

@@ -27,7 +27,6 @@ export function CW20SendForm({
 }) {
   const { daoAddress } = useProposalFormContext();
   const executeData = data.wasm.execute;
-  console.log('🚀 ~ CW20SendForm ~ executeData:', executeData);
   const chain = useChainByContractOptional(daoAddress);
   const { prices, getPrice } = usePrices();
 

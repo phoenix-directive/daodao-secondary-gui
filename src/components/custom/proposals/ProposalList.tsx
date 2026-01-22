@@ -8,8 +8,8 @@ import {
 } from '@/daodao/types/contracts/DaoProposalSingle.v2';
 import { Chain } from '@/hooks/helpers/assets';
 import { useChain } from '@/hooks/useChain';
-import { Loader2, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ChevronsLeft, Loader2, Plus } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 interface ProposalData {
@@ -50,7 +50,24 @@ export function ProposalList({
   const [hasMore, setHasMore] = useState(true);
   const [lowestId, setLowestId] = useState<number | null>(null);
 
+  // Track navigation history to determine if user arrived via navigation or direct load
+  const [pageStack, setPageStack] = useState<(number | undefined)[]>([]);
+  const initialLoadRef = useRef(true);
+
   const limit = 10;
+
+  // Initialize page stack on mount
+  useEffect(() => {
+    if (initialLoadRef.current && startAfter !== undefined) {
+      // User loaded with a page param, so we don't have navigation history
+      setPageStack([]);
+      initialLoadRef.current = false;
+    } else if (initialLoadRef.current) {
+      // User loaded on first page
+      setPageStack([undefined]);
+      initialLoadRef.current = false;
+    }
+  }, [startAfter]);
 
   // Fetch proposals and config
   useEffect(() => {
@@ -207,6 +224,36 @@ export function ProposalList({
     setSearchParams(params);
   };
 
+  const goToNext = () => {
+    if (lowestId !== null) {
+      // Add current page to stack before navigating forward
+      setPageStack((prev) => [...prev, startAfter]);
+      updateSearchParams(lowestId);
+    }
+  };
+
+  const goToPrevious = () => {
+    // Pop from stack to go to previous page
+    setPageStack((prev) => {
+      const newStack = [...prev];
+      const prevPage = newStack.pop();
+      return newStack;
+    });
+    const prevPage = pageStack[pageStack.length - 1];
+    updateSearchParams(prevPage);
+  };
+
+  const goToFirst = () => {
+    // Clear stack and go to first page
+    setPageStack([undefined]);
+    updateSearchParams();
+  };
+
+  // Determine if we should show "First" button instead of "Previous"
+  // Show "First" when: user loaded with a param AND hasn't navigated yet (empty stack)
+  const showFirstButton = startAfter !== undefined && pageStack.length === 0;
+  const showPreviousButton = pageStack.length > 0;
+
   return (
     <Card className="pb-0">
       <CardHeader>
@@ -226,27 +273,36 @@ export function ProposalList({
         <ProposalTable proposals={proposalData.proposals} prefix={prefix} />
 
         {/* Pagination */}
-        {(startAfter || hasMore) && (
+        {(showFirstButton || showPreviousButton || hasMore) && (
           <div className="flex items-center justify-between p-4 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => updateSearchParams()}
-              disabled={!startAfter || isLoading}
-            >
-              Previous
-            </Button>
+            {showFirstButton ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToFirst}
+                disabled={isLoading}
+                className="gap-2"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+                First
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPrevious}
+                disabled={!showPreviousButton || isLoading}
+              >
+                Previous
+              </Button>
+            )}
             <span className="text-sm text-muted-foreground font-medium">
               {startAfter ? `After #${startAfter}` : 'Latest'}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                if (lowestId !== null) {
-                  updateSearchParams(lowestId);
-                }
-              }}
+              onClick={goToNext}
               disabled={!hasMore || isLoading}
             >
               Next

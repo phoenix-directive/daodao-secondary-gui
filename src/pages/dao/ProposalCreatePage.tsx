@@ -85,8 +85,6 @@ function PublishActions({
   setActiveTab: (tab: 'edit' | 'preview') => void;
   coreMessagesSimulation: ReturnType<typeof useProposalActionsSimulation>;
 }) {
-  console.log(publishProposal.buttonProps);
-
   // Collect all errors
   const errors: string[] = [];
 
