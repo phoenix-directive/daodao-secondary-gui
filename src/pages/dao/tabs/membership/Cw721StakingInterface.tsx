@@ -54,7 +54,7 @@ export function Cw721StakingInterface({ votingModuleAddress }: Cw721StakingInter
 
   // Fetch user's staked NFTs
   const stakedNftsSignal = useAsyncSignal(async () => {
-    if (!userAddress || !votingModuleAddress) return [];
+    if (!userAddress || !votingModuleAddress || !nftContractAddress) return [];
     const tokenIds = await getUserStakedNfts(votingModuleAddress, userAddress, chain);
     if (!nftContractAddress || tokenIds.length === 0) return [];
     const nftInfos = await batchGetNftInfo(nftContractAddress, tokenIds, chain);
@@ -426,7 +426,6 @@ export function Cw721StakingInterface({ votingModuleAddress }: Cw721StakingInter
               {claimsWithInfo.map((claim, idx) => {
                 const isReady = isClaimReady(claim.release_at);
                 const imageUrl = getNftImageUrl(claim.nftInfo.imageUrl, 160);
-                console.log('🚀 ~ Cw721StakingInterface ~ imageUrl:', claim);
                 const hasError = imageErrors.has(claim.token_id);
 
                 return (

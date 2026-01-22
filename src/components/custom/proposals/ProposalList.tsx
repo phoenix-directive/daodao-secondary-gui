@@ -299,12 +299,7 @@ export function ProposalList({
             <span className="text-sm text-muted-foreground font-medium">
               {startAfter ? `After #${startAfter}` : 'Latest'}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToNext}
-              disabled={!hasMore || isLoading}
-            >
+            <Button variant="outline" size="sm" onClick={goToNext} disabled={!hasMore || isLoading}>
               Next
             </Button>
           </div>
