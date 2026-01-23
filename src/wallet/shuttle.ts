@@ -46,6 +46,6 @@ export const mobileProviders = [
   !inIframe &&
     new KeplrMobileProvider({
       networks,
-      walletConnectProjectId: '30d17f02d1ea636615d49b36e1c80b65',
+      walletConnectProjectId: 'd8bb9617d17922bfcd43ddb48eeb77a6',
     }),
 ].filter(notFalsy);
