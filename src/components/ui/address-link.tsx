@@ -148,7 +148,7 @@ export function AddressLink({
             <a
               href={link}
               target="_blank"
-              className="font-mono text-sm font-medium"
+              className="font-mono text-sm font-medium text-wrap"
               onClick={(e) => e.stopPropagation()}
             >
               {displayText}
