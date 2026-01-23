@@ -30,11 +30,11 @@ export function WasmExecuteView({ data }: { data: WasmExecuteMsg }) {
           <div className="text-sm font-medium text-muted-foreground mb-1">Contract</div>
           {tokenInfo ? (
             <div className="flex items-center gap-2">
-              <AddressLink address={contract_addr} short={false} />
+              <AddressLink address={contract_addr} short={false} isSmartContract={true} />
               <span className="text-sm text-muted-foreground">({tokenInfo.display})</span>
             </div>
           ) : (
-            <AddressLink address={contract_addr} short={false} />
+            <AddressLink address={contract_addr} short={false} isSmartContract={true} />
           )}
         </div>
 

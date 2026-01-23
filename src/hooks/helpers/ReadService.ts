@@ -128,6 +128,12 @@ export class ReadService {
     },
   };
 
+  contractInfo(contractAddress: string) {
+    return this.cache.getCached(`contract_info_${contractAddress}`, 60 * 24, () => {
+      return this.clients.wasmClient.getContract(contractAddress);
+    });
+  }
+
   query<T, T2 = any>(contract: string, query: T2): Promise<T> {
     const client = this.clients.wasmClient;
 

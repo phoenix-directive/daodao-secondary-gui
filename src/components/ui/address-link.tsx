@@ -1,5 +1,6 @@
 import { Chain } from '@/hooks/helpers/assets';
 import { useChain } from '@/hooks/useChain';
+import { useContractInfo } from '@/hooks/useContractInfo';
 import { useAddress } from '@/hooks/useWallet';
 import { addressTags, removeAddressTag, setAddressTag } from '@/lib/signals-instances';
 import { cn } from '@/lib/utils';
@@ -17,6 +18,7 @@ interface AddressLinkProps {
   short?: boolean;
   label?: string;
   allowTagging?: boolean;
+  isSmartContract?: boolean;
   additionalLink?: {
     tooltip: string;
     linkOrUrl: string;
@@ -31,10 +33,12 @@ export function AddressLink({
   short = true,
   label,
   allowTagging = false,
+  isSmartContract = false,
   additionalLink,
 }: AddressLinkProps) {
   const chainService = useChain(chain);
   const connectedAddress = useAddress(chain);
+  const contractInfo = useContractInfo(isSmartContract ? address : undefined, chain);
   const [copied, setCopied] = useState(false);
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -148,6 +152,11 @@ export function AddressLink({
               onClick={(e) => e.stopPropagation()}
             >
               {displayText}
+              {contractInfo.data.value?.label && (
+                <span className="text-primary ml-1.5 text-xs font-normal px-1.5 py-0.5 rounded-md bg-primary/10 border border-primary/20">
+                  {contractInfo.data.value.label}
+                </span>
+              )}
               {tag && <span className="text-muted-foreground ml-1">({tag})</span>}
             </a>
           </Button>
