@@ -23,9 +23,9 @@ Built upon the excellent foundation of [DAO DAO](https://github.com/DA0-DA0/dao-
 - **⚡ Fast & Lightweight:** Optimized bundle size with tree-shaking and code splitting
 - **📝 Proposal Management:** Create, vote, and execute proposals with inline action editor
 - **👥 Member Management:** View members, stake/unstake tokens, manage voting power
-- **💰 Treasury:** View and manage DAO assets across multiple chains
+- **💰 Treasury:** View and manage DAO assets on Terra
 - **🏛️ Sub-DAOs:** Hierarchical DAO structures with parent-child relationships
-- **🔌 DApp Integration:** Embedded apps marketplace (Astroport, Warp, etc.)
+- **🔌 DApp Integration:** Embedded apps library (Astroport, ERIS, Votion, Creda, etc.)
 - **👛 Wallet Integration:** Keplr, Leap, and more via Shuttle
 - **🎨 Modern UI:** Clean interface with dark/light mode
 
