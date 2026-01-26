@@ -13,6 +13,7 @@ import { DaoPage } from './pages/dao/DaoPage';
 import { ProposalCreatePage } from './pages/dao/ProposalCreatePage';
 import { ProposalDetailPage } from './pages/dao/ProposalDetailPage';
 import { LandingPage } from './pages/LandingPage';
+import { TelegramBotPage } from './pages/TelegramBotPage';
 
 if (import.meta.hot) {
   import.meta.hot.on('vite:afterUpdate', (payload: any) => {
@@ -42,6 +43,7 @@ function AppContent() {
             <Layout>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/telegram-bot" element={<TelegramBotPage />} />
                 <Route path="/dao/:address/proposals/create" element={<ProposalCreatePage />} />
                 <Route
                   path="/dao/:address/proposals/:proposalId"

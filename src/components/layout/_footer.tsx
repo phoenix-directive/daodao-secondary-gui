@@ -41,6 +41,7 @@ export function Footer({
       title: 'Resources',
       links: [
         { text: 'Documentation', url: 'https://docs.phoenix.money', external: true },
+        { text: 'Telegram Bot', link: '/telegram-bot' },
         // { text: 'Brand Assets', link: '/brand' },
         {
           text: 'GitHub',

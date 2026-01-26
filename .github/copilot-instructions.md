@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a React + TypeScript + Vite DAO frontend for Cosmos blockchain with modular architecture. Core features: proposal creation/voting, wallet integration, and smart contract execution.
+Phoenix DAOs is a lightweight, high-performance DAO interface for Cosmos blockchain. Built with React + TypeScript + Vite, it's a complete rewrite of [DAO DAO](https://github.com/DA0-DA0/dao-dao-ui) optimized for speed and essential functionality. Core features: proposal creation/voting, wallet integration, smart contract execution, and multi-chain support (Terra, Neutron, etc.).
 
 **Key Directories:**
 
@@ -11,6 +11,7 @@ This is a React + TypeScript + Vite DAO frontend for Cosmos blockchain with modu
 - `src/hooks/`: Custom React hooks (wallet, balances, chain queries)
 - `src/config/`: Static config (assets, chains, feature flags)
 - `src/daodao/protobuf/`: Cosmos/CosmWasm protobuf definitions
+- `src/wallet/`: Shuttle wallet integration (Keplr, Leap, etc.)
 
 ## State Management: Preact Signals
 
@@ -35,7 +36,14 @@ const { data, loading, error } = useAsyncSignal(
 // Access: data.value, loading.value, error.value
 ```
 
-All hooks return signals with `.value` access. See `src/lib/signals.ts` for utilities.
+**Standalone async signals** (`createAsyncSignal` in `src/lib/signals.ts`):
+
+```tsx
+const data = createAsyncSignal(async () => fetchData(), initialValue);
+// Auto-fetches on creation, returns { data, loading, error, load }
+```
+
+All hooks return signals with `.value` access. See `src/lib/signals.ts` for utilities (`createPersistedSignal`, `createStore`).
 
 ## Action Registry System
 
@@ -162,7 +170,15 @@ pnpm preview     # Preview production build
 
 ## Polyfills & Build
 
-Vite config includes Node.js polyfills (Buffer, process) for Cosmos SDK. Preact Signals transform applied via Babel plugin.
+Vite config includes Node.js polyfills (Buffer, process) for Cosmos SDK compatibility. Preact Signals transform applied via Babel plugin (`module:@preact/signals-react-transform`).
+
+**Critical monkeypatch:** `src/monkeypatch.ts` optimizes CosmJS client creation by reusing `HttpBatchClient` instances per endpoint (imported in `main.tsx` before app initialization). This prevents connection leaks and improves RPC performance.
+
+**Build optimization:**
+
+- Tree-shaking enabled for minimal bundle size
+- `versionHashPlugin` generates unique build hashes in `public/version.json` for cache busting
+- Analyze bundle: `pnpm analyze` (uses `vite-bundle-visualizer`)
 
 ## File Organization
 
@@ -208,12 +224,11 @@ See `src/lib/member-helpers.ts` (utilities) + `src/components/custom/members/mem
 
 ## Reference Examples
 
-- **Simple Form:** `src/lib/action-types/bank-send.tsx` (address input + token selector with max button)
-- **Complex Form:** `src/lib/action-types/wasm-execute.tsx` (JSON editor + dynamic funds array with debouncing)
+- **Simple Form:** `src/lib/action-types/bank-send/BankSendAction.tsx` (address input + token selector with max button)
+- **Complex Form:** `src/lib/action-types/wasm-execute/WasmExecuteAction.tsx` (JSON editor + dynamic funds array with debouncing)
 - **Adapter Pattern:** `src/lib/voting-modules/` (factory + multiple adapters)
 - **Signals Docs:** `src/lib/signals.ts` (persisted signals, async signals, computed)
 
 ---
 
 **Questions?** Check file examples above or existing implementations in `src/lib/action-types/` for patterns.
-
