@@ -157,7 +157,7 @@ export function AddressLink({
                   {contractInfo.data.value.label}
                 </span>
               )}
-              {tag && <span className="text-muted-foreground ml-1">({tag})</span>}
+              {tag && <span className="text-muted-foreground">({tag})</span>}
             </a>
           </Button>
           <div className="flex items-center gap-1">

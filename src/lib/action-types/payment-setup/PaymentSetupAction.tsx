@@ -1,4 +1,3 @@
-import { fromBaseUnits } from '@/hooks/useBalances';
 import { PaymentSetupView } from '@/lib/action-types/payment-setup/PaymentSetupView';
 import { WasmExecuteForm } from '@/lib/action-types/wasm-execute/WasmExecuteForm';
 import { Wallet } from 'lucide-react';
