@@ -14,9 +14,13 @@ export type WasmExecuteMsg = {
   };
 };
 
-// Type guard - must not be a CW20 transfer
+// Type guard - must not be a CW20 transfer or payment setup
 export const isWasmExecute = (data: any): data is WasmExecuteMsg => {
-  return data?.wasm?.execute !== undefined && !data.wasm.execute.msg?.transfer;
+  return (
+    data?.wasm?.execute !== undefined &&
+    !data.wasm.execute.msg?.transfer &&
+    !data.wasm.execute.msg?.setup?.action?.payment?.payments
+  );
 };
 
 // Helper function to decode message

@@ -8,6 +8,7 @@ import { BankSendActionType } from './bank-send/BankSendAction';
 import { CW20SendActionType } from './cw20-send/CW20SendAction';
 import { CW20TransferActionType } from './cw20-transfer/CW20TransferAction';
 import { GovVoteActionType } from './gov-vote/GovVoteAction';
+import { PaymentSetupActionType } from './payment-setup';
 import { StakingDelegateActionType } from './staking-delegate/StakingDelegateAction';
 import { StakingUndelegateActionType } from './staking-undelegate/StakingUndelegateAction';
 import { StargateGovVoteActionType } from './stargate-gov-vote/StargateGovVoteAction';
@@ -29,6 +30,9 @@ actionRegistry.registerAll([
   StargateGovVoteActionType,
   WasmUpdateAdminActionType,
 
+  // Payment setup must come before generic Wasm Execute
+  PaymentSetupActionType,
+
   // Generic Wasm Execute should be last among wasm types
   WasmExecuteActionType,
 ]);
@@ -39,6 +43,7 @@ export {
   CW20SendActionType,
   CW20TransferActionType,
   GovVoteActionType,
+  PaymentSetupActionType,
   StakingDelegateActionType,
   StakingUndelegateActionType,
   StargateGovVoteActionType,

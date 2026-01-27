@@ -2,6 +2,9 @@ import { Buffer } from 'buffer';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import './monkeypatch.ts';
+// Register all action types
+import './lib/action-types';
 
 globalThis.Buffer = Buffer;
 
