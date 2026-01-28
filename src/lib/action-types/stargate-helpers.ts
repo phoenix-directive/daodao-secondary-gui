@@ -91,11 +91,11 @@ export function getStargateValue<T>(action: StargateActionWithDecoded<T>): T {
 /**
  * Helper to update a decoded stargate value and properly re-encode it
  * Use this instead of directly calling onUpdate with nested paths like ['stargate', 'value', 'field']
- * 
+ *
  * @param action - The current stargate action data
  * @param onUpdate - The form's onUpdate callback
  * @param updates - Object with fields to update in the decoded value
- * 
+ *
  * @example
  * updateStargateValue(data, onUpdate, { validatorAddress: 'cosmos1...' })
  * updateStargateValue(data, onUpdate, { amount: { denom: 'uluna', amount: '1000000' } })
@@ -107,17 +107,17 @@ export function updateStargateValue<T extends Record<string, any>>(
 ): void {
   // Get current decoded value
   const currentValue = getStargateValue(action);
-  
+
   // Merge updates with current value
   const newDecodedValue = { ...currentValue, ...updates };
-  
+
   // Get the type URL
   const typeUrl = action.stargate.type_url || '';
-  
+
   // Re-encode the updated value to base64-encoded protobuf
   const encodedBytes = encodeProtobufValue(typeUrl, newDecodedValue);
   const base64Value = toBase64(encodedBytes);
-  
+
   // Update with properly encoded value and decoded cache
   onUpdate(['stargate'], {
     type_url: typeUrl,

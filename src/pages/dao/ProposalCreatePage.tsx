@@ -37,7 +37,7 @@ import {
 import { ProposalFormProvider } from '@/lib/proposal-form-context';
 import { cloneDeep } from 'lodash';
 import { ArrowLeft, Eye, FileText, Library, Loader2, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -70,8 +70,8 @@ interface PrefillData {
   };
 }
 
-// Reusable publish actions component
-function PublishActions({
+// Reusable publish actions component - memoized to prevent unnecessary re-renders
+const PublishActions = memo(function PublishActions({
   publishProposal,
   handlePublish,
   handleClearDraft,
@@ -166,7 +166,7 @@ function PublishActions({
       <ErrorDisplay errors={errors} title="Validation Errors" />
     </div>
   );
-}
+});
 
 export function ProposalCreatePage() {
   usePageMeta('proposal-create', 'Create Proposal');
@@ -204,34 +204,37 @@ export function ProposalCreatePage() {
   // Fetch DAO state to check available proposal modules
   const daoState = useDaoDaoState(daoAddress);
 
-  // Handle messages from DappComponent
-  const handleAppMessages = (_chainId: string, _sender: string, msgs: UnifiedCosmosMsg[]) => {
+  // Handle messages from DappComponent - memoized to prevent re-creation
+  const handleAppMessages = useCallback((_chainId: string, _sender: string, msgs: UnifiedCosmosMsg[]) => {
     // Convert messages to actions
     const newActions: ProposalAction[] = msgs.map((msg) => ({
       id: crypto.randomUUID(),
       data: msg,
     }));
 
-    // Insert actions based on context
-    if (draft.proposalType === 'single') {
-      if (pendingAppInsertIndex !== null) {
-        // Insert after specific index
-        const updatedActions = [...draft.actions];
-        updatedActions.splice(pendingAppInsertIndex + 1, 0, ...newActions);
-        updateDraft({ actions: updatedActions });
-      } else {
-        // Append to end
-        updateDraft({ actions: [...draft.actions, ...newActions] });
+    setDraft((prev) => {
+      // Insert actions based on context
+      if (prev.proposalType === 'single') {
+        if (pendingAppInsertIndex !== null) {
+          // Insert after specific index
+          const updatedActions = [...prev.actions];
+          updatedActions.splice(pendingAppInsertIndex + 1, 0, ...newActions);
+          return { ...prev, actions: updatedActions };
+        } else {
+          // Append to end
+          return { ...prev, actions: [...prev.actions, ...newActions] };
+        }
+      } else if (pendingAppChoiceIndex !== null) {
+        // Add to specific choice
+        const newChoices = [...prev.choices];
+        newChoices[pendingAppChoiceIndex].actions = [
+          ...newChoices[pendingAppChoiceIndex].actions,
+          ...newActions,
+        ];
+        return { ...prev, choices: newChoices };
       }
-    } else if (pendingAppChoiceIndex !== null) {
-      // Add to specific choice
-      const newChoices = [...draft.choices];
-      newChoices[pendingAppChoiceIndex].actions = [
-        ...newChoices[pendingAppChoiceIndex].actions,
-        ...newActions,
-      ];
-      updateDraft({ choices: newChoices });
-    }
+      return prev;
+    });
 
     // Close fullscreen and clear state
     setAppFullscreen(false);
@@ -240,14 +243,14 @@ export function ProposalCreatePage() {
     toast.success(
       `Added ${newActions.length} action${newActions.length > 1 ? 's' : ''} from ${appName}`,
     );
-  };
+  }, [pendingAppInsertIndex, pendingAppChoiceIndex, appName]);
 
-  // Handle closing app without messages
-  const handleAppClose = () => {
+  // Handle closing app without messages - memoized
+  const handleAppClose = useCallback(() => {
     setAppFullscreen(false);
     setPendingAppInsertIndex(null);
     setPendingAppChoiceIndex(null);
-  };
+  }, []);
 
   // Get available proposal types from computed data
   const availableProposalTypes = daoState.data.value?._computed.availableProposalTypes || {
@@ -384,134 +387,158 @@ export function ProposalCreatePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.get('prefill'), window.location.hash, daoAddress]);
 
-  const updateDraft = (updates: Partial<ProposalDraft>) => {
+  const updateDraft = useCallback((updates: Partial<ProposalDraft>) => {
     setDraft((prev) => ({ ...prev, ...updates }));
-  };
+  }, []);
 
-  const addAction = (template?: ActionTemplate) => {
+  const addAction = useCallback((template?: ActionTemplate) => {
     const newAction: ProposalAction = {
       id: crypto.randomUUID(),
       data: template?.defaultData || {},
     };
-    updateDraft({ actions: [...draft.actions, newAction] });
-  };
+    setDraft((prev) => ({ ...prev, actions: [...prev.actions, newAction] }));
+  }, []);
 
-  const updateAction = (index: number, action: ProposalAction) => {
-    const newActions = [...draft.actions];
-    newActions[index] = action;
-    updateDraft({ actions: newActions });
-  };
+  const updateAction = useCallback((index: number, action: ProposalAction) => {
+    setDraft((prev) => {
+      const newActions = [...prev.actions];
+      newActions[index] = action;
+      return { ...prev, actions: newActions };
+    });
+  }, []);
 
-  const removeAction = (index: number) => {
-    const newActions = draft.actions.filter((_, i) => i !== index);
-    updateDraft({ actions: newActions });
-  };
+  const removeAction = useCallback((index: number) => {
+    setDraft((prev) => ({
+      ...prev,
+      actions: prev.actions.filter((_, i) => i !== index),
+    }));
+  }, []);
 
-  const duplicateAction = (index: number) => {
-    const actionToDuplicate = draft.actions[index];
-    const newAction: ProposalAction = {
-      ...JSON.parse(JSON.stringify(actionToDuplicate)),
-      id: crypto.randomUUID(),
-    };
-    const newActions = [...draft.actions];
-    newActions.splice(index + 1, 0, newAction);
-    updateDraft({ actions: newActions });
-  };
+  const duplicateAction = useCallback((index: number) => {
+    setDraft((prev) => {
+      const actionToDuplicate = prev.actions[index];
+      const newAction: ProposalAction = {
+        ...JSON.parse(JSON.stringify(actionToDuplicate)),
+        id: crypto.randomUUID(),
+      };
+      const newActions = [...prev.actions];
+      newActions.splice(index + 1, 0, newAction);
+      return { ...prev, actions: newActions };
+    });
+  }, []);
 
-  const insertActionAfter = (index: number, template?: ActionTemplate) => {
-    const newAction: ProposalAction = {
-      id: crypto.randomUUID(),
-      data: template?.defaultData || {},
-    };
-    const newActions = [...draft.actions];
-    newActions.splice(index + 1, 0, newAction);
-    updateDraft({ actions: newActions });
-  };
+  const insertActionAfter = useCallback((index: number, template?: ActionTemplate) => {
+    setDraft((prev) => {
+      const newAction: ProposalAction = {
+        id: crypto.randomUUID(),
+        data: template?.defaultData || {},
+      };
+      const newActions = [...prev.actions];
+      newActions.splice(index + 1, 0, newAction);
+      return { ...prev, actions: newActions };
+    });
+  }, []);
 
-  const moveAction = (index: number, direction: 'up' | 'down') => {
-    if (
-      (direction === 'up' && index === 0) ||
-      (direction === 'down' && index === draft.actions.length - 1)
-    ) {
-      return;
-    }
+  const moveAction = useCallback((index: number, direction: 'up' | 'down') => {
+    setDraft((prev) => {
+      if (
+        (direction === 'up' && index === 0) ||
+        (direction === 'down' && index === prev.actions.length - 1)
+      ) {
+        return prev;
+      }
 
-    const newActions = [...draft.actions];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    [newActions[index], newActions[targetIndex]] = [newActions[targetIndex], newActions[index]];
-    updateDraft({ actions: newActions });
-  };
+      const newActions = [...prev.actions];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      [newActions[index], newActions[targetIndex]] = [newActions[targetIndex], newActions[index]];
+      return { ...prev, actions: newActions };
+    });
+  }, []);
 
-  // Choice management functions for multiple choice proposals
-  const addChoice = () => {
+  // Choice management functions for multiple choice proposals - memoized with useCallback
+  const addChoice = useCallback(() => {
     const newChoice: ProposalChoice = {
       id: crypto.randomUUID(),
       title: '',
       description: '',
       actions: [],
     };
-    updateDraft({ choices: [...draft.choices, newChoice] });
-  };
+    setDraft((prev) => ({ ...prev, choices: [...prev.choices, newChoice] }));
+  }, []);
 
-  const updateChoice = (index: number, updates: Partial<ProposalChoice>) => {
-    const newChoices = [...draft.choices];
-    newChoices[index] = { ...newChoices[index], ...updates };
-    updateDraft({ choices: newChoices });
-  };
+  const updateChoice = useCallback((index: number, updates: Partial<ProposalChoice>) => {
+    setDraft((prev) => {
+      const newChoices = [...prev.choices];
+      newChoices[index] = { ...newChoices[index], ...updates };
+      return { ...prev, choices: newChoices };
+    });
+  }, []);
 
-  const removeChoice = (index: number) => {
-    const newChoices = draft.choices.filter((_, i) => i !== index);
-    updateDraft({ choices: newChoices });
-  };
+  const removeChoice = useCallback((index: number) => {
+    setDraft((prev) => ({
+      ...prev,
+      choices: prev.choices.filter((_, i) => i !== index),
+    }));
+  }, []);
 
-  const addChoiceAction = (choiceIndex: number, template?: ActionTemplate) => {
-    const newAction: ProposalAction = {
-      id: crypto.randomUUID(),
-      data: template?.defaultData || {},
-    };
-    const newChoices = [...draft.choices];
-    newChoices[choiceIndex].actions = [...newChoices[choiceIndex].actions, newAction];
-    updateDraft({ choices: newChoices });
-  };
+  const addChoiceAction = useCallback((choiceIndex: number, template?: ActionTemplate) => {
+    setDraft((prev) => {
+      const newAction: ProposalAction = {
+        id: crypto.randomUUID(),
+        data: template?.defaultData || {},
+      };
+      const newChoices = [...prev.choices];
+      newChoices[choiceIndex].actions = [...newChoices[choiceIndex].actions, newAction];
+      return { ...prev, choices: newChoices };
+    });
+  }, []);
 
-  const updateChoiceAction = (choiceIndex: number, actionIndex: number, action: ProposalAction) => {
-    const newChoices = [...draft.choices];
-    newChoices[choiceIndex].actions[actionIndex] = action;
-    updateDraft({ choices: newChoices });
-  };
+  const updateChoiceAction = useCallback((choiceIndex: number, actionIndex: number, action: ProposalAction) => {
+    setDraft((prev) => {
+      const newChoices = [...prev.choices];
+      newChoices[choiceIndex].actions[actionIndex] = action;
+      return { ...prev, choices: newChoices };
+    });
+  }, []);
 
-  const removeChoiceAction = (choiceIndex: number, actionIndex: number) => {
-    const newChoices = [...draft.choices];
-    newChoices[choiceIndex].actions = newChoices[choiceIndex].actions.filter(
-      (_, i) => i !== actionIndex,
-    );
-    updateDraft({ choices: newChoices });
-  };
+  const removeChoiceAction = useCallback((choiceIndex: number, actionIndex: number) => {
+    setDraft((prev) => {
+      const newChoices = [...prev.choices];
+      newChoices[choiceIndex].actions = newChoices[choiceIndex].actions.filter(
+        (_, i) => i !== actionIndex,
+      );
+      return { ...prev, choices: newChoices };
+    });
+  }, []);
 
-  const duplicateChoiceAction = (choiceIndex: number, actionIndex: number) => {
-    const newChoices = [...draft.choices];
-    const actionToDuplicate = newChoices[choiceIndex].actions[actionIndex];
-    const newAction: ProposalAction = {
-      ...JSON.parse(JSON.stringify(actionToDuplicate)),
-      id: crypto.randomUUID(),
-    };
-    newChoices[choiceIndex].actions.splice(actionIndex + 1, 0, newAction);
-    updateDraft({ choices: newChoices });
-  };
+  const duplicateChoiceAction = useCallback((choiceIndex: number, actionIndex: number) => {
+    setDraft((prev) => {
+      const newChoices = [...prev.choices];
+      const actionToDuplicate = newChoices[choiceIndex].actions[actionIndex];
+      const newAction: ProposalAction = {
+        ...JSON.parse(JSON.stringify(actionToDuplicate)),
+        id: crypto.randomUUID(),
+      };
+      newChoices[choiceIndex].actions.splice(actionIndex + 1, 0, newAction);
+      return { ...prev, choices: newChoices };
+    });
+  }, []);
 
-  const moveChoiceAction = (choiceIndex: number, actionIndex: number, direction: 'up' | 'down') => {
-    const newChoices = [...draft.choices];
-    const actions = newChoices[choiceIndex].actions;
-    if (
-      (direction === 'up' && actionIndex === 0) ||
-      (direction === 'down' && actionIndex === actions.length - 1)
-    ) {
-      return;
-    }
-    const targetIndex = direction === 'up' ? actionIndex - 1 : actionIndex + 1;
-    [actions[actionIndex], actions[targetIndex]] = [actions[targetIndex], actions[actionIndex]];
-    updateDraft({ choices: newChoices });
-  };
+  const moveChoiceAction = useCallback((choiceIndex: number, actionIndex: number, direction: 'up' | 'down') => {
+    setDraft((prev) => {
+      const newChoices = [...prev.choices];
+      const actions = newChoices[choiceIndex].actions;
+      if (
+        (direction === 'up' && actionIndex === 0) ||
+        (direction === 'down' && actionIndex === actions.length - 1)
+      ) {
+        return prev;
+      }
+      const targetIndex = direction === 'up' ? actionIndex - 1 : actionIndex + 1;
+      [actions[actionIndex], actions[targetIndex]] = [actions[targetIndex], actions[actionIndex]];
+      return { ...prev, choices: newChoices };
+    });
+  }, []);
 
   // Get the proposal module address based on type
   const proposalModuleAddress = daoState.data.value?.proposal_modules.find(
@@ -525,8 +552,8 @@ export function ProposalCreatePage() {
   const creationPolicy = useProposalCreationPolicy(proposalModuleAddress);
   const preProposalModuleAddress = creationPolicy.data.value?.module?.addr;
 
-  // Helper function to recursively strip _decoded properties from messages
-  const stripDecoded = (obj: any): any => {
+  // Helper function to recursively strip _decoded properties from messages - memoized with useCallback
+  const stripDecoded = useCallback((obj: any): any => {
     if (!obj || typeof obj !== 'object') return obj;
     if (Array.isArray(obj)) return obj.map(stripDecoded);
 
@@ -536,7 +563,7 @@ export function ProposalCreatePage() {
       result[key] = stripDecoded(value);
     }
     return result;
-  };
+  }, []);
 
   // Extract core messages (the actual actions to execute)
   const coreMessages = useMemo(() => {
@@ -547,7 +574,7 @@ export function ProposalCreatePage() {
     return draft.choices.map((choice) =>
       choice.actions.map((a) => stripDecoded(cloneDeep(a.data)) as UnifiedCosmosMsg),
     );
-  }, [draft.proposalType, draft.actions, draft.choices]);
+  }, [draft.proposalType, draft.actions, draft.choices, stripDecoded]);
 
   // Memoize the choices array for multiple choice proposals to prevent unnecessary re-renders
   const simulationChoices = useMemo(
@@ -662,7 +689,7 @@ export function ProposalCreatePage() {
     },
   });
 
-  const handlePublish = () => {
+  const handlePublish = useCallback(() => {
     if (!draft.title.trim()) {
       toast.error('Please enter a proposal title');
       return;
@@ -672,19 +699,19 @@ export function ProposalCreatePage() {
       return;
     }
     publishProposal.broadcast();
-  };
+  }, [draft.title, proposalModuleAddress, publishProposal]);
 
-  const handleClearDraft = () => {
+  const handleClearDraft = useCallback(() => {
     setShowClearConfirm(true);
-  };
+  }, []);
 
-  const confirmClearDraft = () => {
+  const confirmClearDraft = useCallback(() => {
     setDraft(getEmptyDraft());
     if (daoAddress) {
       clearDraft(daoAddress);
     }
     toast.success('Draft cleared');
-  };
+  }, [daoAddress]);
 
   return (
     <ProposalFormProvider daoAddress={daoAddress || ''}>
