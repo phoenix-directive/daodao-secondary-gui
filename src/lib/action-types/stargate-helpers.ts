@@ -132,7 +132,7 @@ export function updateStargateValue<T extends Record<string, any>>(
 export type StargateActionWithDecoded<T> = {
   stargate: {
     type_url?: string;
-    value: T | string; // string when base64 encoded, T when already decoded
+    value: string; // string when base64 encoded, T when already decoded
     _decoded?: T; // Decoded value stored separately
   };
 };

@@ -205,45 +205,48 @@ export function ProposalCreatePage() {
   const daoState = useDaoDaoState(daoAddress);
 
   // Handle messages from DappComponent - memoized to prevent re-creation
-  const handleAppMessages = useCallback((_chainId: string, _sender: string, msgs: UnifiedCosmosMsg[]) => {
-    // Convert messages to actions
-    const newActions: ProposalAction[] = msgs.map((msg) => ({
-      id: crypto.randomUUID(),
-      data: msg,
-    }));
+  const handleAppMessages = useCallback(
+    (_chainId: string, _sender: string, msgs: UnifiedCosmosMsg[]) => {
+      // Convert messages to actions
+      const newActions: ProposalAction[] = msgs.map((msg) => ({
+        id: crypto.randomUUID(),
+        data: msg,
+      }));
 
-    setDraft((prev) => {
-      // Insert actions based on context
-      if (prev.proposalType === 'single') {
-        if (pendingAppInsertIndex !== null) {
-          // Insert after specific index
-          const updatedActions = [...prev.actions];
-          updatedActions.splice(pendingAppInsertIndex + 1, 0, ...newActions);
-          return { ...prev, actions: updatedActions };
-        } else {
-          // Append to end
-          return { ...prev, actions: [...prev.actions, ...newActions] };
+      setDraft((prev) => {
+        // Insert actions based on context
+        if (prev.proposalType === 'single') {
+          if (pendingAppInsertIndex !== null) {
+            // Insert after specific index
+            const updatedActions = [...prev.actions];
+            updatedActions.splice(pendingAppInsertIndex + 1, 0, ...newActions);
+            return { ...prev, actions: updatedActions };
+          } else {
+            // Append to end
+            return { ...prev, actions: [...prev.actions, ...newActions] };
+          }
+        } else if (pendingAppChoiceIndex !== null) {
+          // Add to specific choice
+          const newChoices = [...prev.choices];
+          newChoices[pendingAppChoiceIndex].actions = [
+            ...newChoices[pendingAppChoiceIndex].actions,
+            ...newActions,
+          ];
+          return { ...prev, choices: newChoices };
         }
-      } else if (pendingAppChoiceIndex !== null) {
-        // Add to specific choice
-        const newChoices = [...prev.choices];
-        newChoices[pendingAppChoiceIndex].actions = [
-          ...newChoices[pendingAppChoiceIndex].actions,
-          ...newActions,
-        ];
-        return { ...prev, choices: newChoices };
-      }
-      return prev;
-    });
+        return prev;
+      });
 
-    // Close fullscreen and clear state
-    setAppFullscreen(false);
-    setPendingAppInsertIndex(null);
-    setPendingAppChoiceIndex(null);
-    toast.success(
-      `Added ${newActions.length} action${newActions.length > 1 ? 's' : ''} from ${appName}`,
-    );
-  }, [pendingAppInsertIndex, pendingAppChoiceIndex, appName]);
+      // Close fullscreen and clear state
+      setAppFullscreen(false);
+      setPendingAppInsertIndex(null);
+      setPendingAppChoiceIndex(null);
+      toast.success(
+        `Added ${newActions.length} action${newActions.length > 1 ? 's' : ''} from ${appName}`,
+      );
+    },
+    [pendingAppInsertIndex, pendingAppChoiceIndex, appName],
+  );
 
   // Handle closing app without messages - memoized
   const handleAppClose = useCallback(() => {
@@ -493,13 +496,16 @@ export function ProposalCreatePage() {
     });
   }, []);
 
-  const updateChoiceAction = useCallback((choiceIndex: number, actionIndex: number, action: ProposalAction) => {
-    setDraft((prev) => {
-      const newChoices = [...prev.choices];
-      newChoices[choiceIndex].actions[actionIndex] = action;
-      return { ...prev, choices: newChoices };
-    });
-  }, []);
+  const updateChoiceAction = useCallback(
+    (choiceIndex: number, actionIndex: number, action: ProposalAction) => {
+      setDraft((prev) => {
+        const newChoices = [...prev.choices];
+        newChoices[choiceIndex].actions[actionIndex] = action;
+        return { ...prev, choices: newChoices };
+      });
+    },
+    [],
+  );
 
   const removeChoiceAction = useCallback((choiceIndex: number, actionIndex: number) => {
     setDraft((prev) => {
@@ -524,21 +530,24 @@ export function ProposalCreatePage() {
     });
   }, []);
 
-  const moveChoiceAction = useCallback((choiceIndex: number, actionIndex: number, direction: 'up' | 'down') => {
-    setDraft((prev) => {
-      const newChoices = [...prev.choices];
-      const actions = newChoices[choiceIndex].actions;
-      if (
-        (direction === 'up' && actionIndex === 0) ||
-        (direction === 'down' && actionIndex === actions.length - 1)
-      ) {
-        return prev;
-      }
-      const targetIndex = direction === 'up' ? actionIndex - 1 : actionIndex + 1;
-      [actions[actionIndex], actions[targetIndex]] = [actions[targetIndex], actions[actionIndex]];
-      return { ...prev, choices: newChoices };
-    });
-  }, []);
+  const moveChoiceAction = useCallback(
+    (choiceIndex: number, actionIndex: number, direction: 'up' | 'down') => {
+      setDraft((prev) => {
+        const newChoices = [...prev.choices];
+        const actions = newChoices[choiceIndex].actions;
+        if (
+          (direction === 'up' && actionIndex === 0) ||
+          (direction === 'down' && actionIndex === actions.length - 1)
+        ) {
+          return prev;
+        }
+        const targetIndex = direction === 'up' ? actionIndex - 1 : actionIndex + 1;
+        [actions[actionIndex], actions[targetIndex]] = [actions[targetIndex], actions[actionIndex]];
+        return { ...prev, choices: newChoices };
+      });
+    },
+    [],
+  );
 
   // Get the proposal module address based on type
   const proposalModuleAddress = daoState.data.value?.proposal_modules.find(

@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getStargateValue } from '../stargate-helpers';
 import type { StargateGovVoteMsg } from './StargateGovVoteAction';
 
 export function StargateGovVoteForm({
@@ -9,7 +10,7 @@ export function StargateGovVoteForm({
   data: StargateGovVoteMsg;
   onUpdate: (path: string[], value: any) => void;
 }) {
-  const value = data.stargate.value;
+  const value = getStargateValue(data);
 
   return (
     <div className="space-y-4">
