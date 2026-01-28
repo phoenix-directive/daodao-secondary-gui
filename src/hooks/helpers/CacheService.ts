@@ -5,10 +5,8 @@ interface CacheEntry {
 
 export class CacheService {
   promises: Record<string, Promise<any> | undefined> = {};
-  promisesMemoryCache: Record<
-    string,
-    { promise: Promise<any>; aliveUntil: number } | undefined
-  > = {};
+  promisesMemoryCache: Record<string, { promise: Promise<any>; aliveUntil: number } | undefined> =
+    {};
 
   constructor() {
     this.cleanupCached();
@@ -16,17 +14,14 @@ export class CacheService {
 
   private cleanupCached() {
     for (const key in localStorage) {
-      if (key.endsWith("_created")) {
+      if (key.endsWith('_created')) {
         const time = localStorage.getItem(key);
         if (time) {
           const timeValue = JSON.parse(time) as CacheEntry;
-          if (
-            timeValue.created <
-            Date.now() - timeValue.ttl_minutes * 60 * 1000
-          ) {
+          if (timeValue.created < Date.now() - timeValue.ttl_minutes * 60 * 1000) {
             localStorage.removeItem(key);
-            const cacheKey = key.substring(0, key.length - "_created".length);
-            console.log("CLEANING CACHE", cacheKey);
+            const cacheKey = key.substring(0, key.length - '_created'.length);
+            console.log('CLEANING CACHE', cacheKey);
             localStorage.removeItem(cacheKey);
           }
         }
@@ -38,7 +33,7 @@ export class CacheService {
     key: string,
     liveTimeS: number,
     func: () => Promise<T>,
-    ignoreError = false
+    ignoreError = false,
   ): Promise<T> {
     if (liveTimeS === 0) {
       return func();
@@ -70,8 +65,8 @@ export class CacheService {
   }
 
   clearCached(key: string) {
-    key = "_" + key;
-    const timekey = key + "_created";
+    key = '_' + key;
+    const timekey = key + '_created';
 
     localStorage.removeItem(key);
     localStorage.removeItem(timekey);
@@ -79,8 +74,8 @@ export class CacheService {
   }
 
   getCachedRaw<T>(key: string, liveTimeMin: number) {
-    key = "_" + key;
-    const timekey = key + "_created";
+    key = '_' + key;
+    const timekey = key + '_created';
     const time = localStorage.getItem(timekey);
 
     if (time) {
@@ -99,15 +94,15 @@ export class CacheService {
   }
 
   setCachedRaw(key: string, result: any, liveTimeMin: number) {
-    key = "_" + key;
-    const timekey = key + "_created";
+    key = '_' + key;
+    const timekey = key + '_created';
 
     localStorage.setItem(
       timekey,
       JSON.stringify(<CacheEntry>{
         created: Date.now(),
         ttl_minutes: liveTimeMin,
-      })
+      }),
     );
     localStorage.setItem(key, JSON.stringify(result));
   }
@@ -116,14 +111,14 @@ export class CacheService {
     key: string,
     liveTimeMin: number,
     func: () => Promise<T>,
-    ignoreError = false
+    ignoreError = false,
   ): Promise<T> {
     if (liveTimeMin === 0) {
       return func();
     }
 
-    key = "_" + key;
-    const timekey = key + "_created";
+    key = '_' + key;
+    const timekey = key + '_created';
     const time = localStorage.getItem(timekey);
 
     if (time) {
@@ -153,16 +148,22 @@ export class CacheService {
     }
 
     const result = await promise;
+    console.log('🚀 ~ CacheService ~ getCached ~ result:', result);
     if (result) {
-      localStorage.setItem(
-        timekey,
-        JSON.stringify(<CacheEntry>{
-          created: Date.now(),
-          ttl_minutes: liveTimeMin,
-        })
-      );
-      localStorage.setItem(key, JSON.stringify(result));
-      this.promises[key] = undefined;
+      try {
+        localStorage.setItem(
+          timekey,
+          JSON.stringify(<CacheEntry>{
+            created: Date.now(),
+            ttl_minutes: liveTimeMin,
+          }),
+        );
+        localStorage.setItem(key, JSON.stringify(result));
+        this.promises[key] = undefined;
+      } catch (error) {
+        console.error('🚀 ~ CacheService ~ getCached ~ error:', error);
+        throw error;
+      }
     }
 
     return result;

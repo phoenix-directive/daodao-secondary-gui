@@ -1,4 +1,5 @@
 import ecosystemProjects from '@/config/ecosystemProjects.json';
+import { encodeProtobufValue } from '@/daodao/protobuf/utils';
 import {
   ArrowRightLeft,
   Coins,
@@ -10,6 +11,22 @@ import {
   Settings,
   Wallet,
 } from 'lucide-react';
+
+// Helper to convert Uint8Array to base64
+function toBase64(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes));
+}
+
+// Helper to create encoded stargate message
+function createStargateTemplate(typeUrl: string, value: any) {
+  const encodedBytes = encodeProtobufValue(typeUrl, value);
+  return {
+    stargate: {
+      type_url: typeUrl,
+      value: toBase64(encodedBytes),
+    },
+  };
+}
 
 export enum ActionCategory {
   TREASURY = 'treasury',
@@ -123,19 +140,14 @@ const BASE_ACTION_TEMPLATES: ActionTemplate[] = [
     description: 'Delegate tokens to a validator',
     icon: Coins,
     category: ActionCategory.GOVERNANCE,
-    defaultData: {
-      stargate: {
-        typeUrl: '/cosmos.staking.v1beta1.MsgDelegate',
-        value: {
-          delegatorAddress: '',
-          validatorAddress: '',
-          amount: {
-            denom: 'uluna',
-            amount: '0',
-          },
-        },
+    defaultData: createStargateTemplate('/cosmos.staking.v1beta1.MsgDelegate', {
+      delegatorAddress: '',
+      validatorAddress: '',
+      amount: {
+        denom: 'uluna',
+        amount: '0',
       },
-    },
+    }),
   },
   {
     id: 'staking_undelegate',
@@ -144,19 +156,14 @@ const BASE_ACTION_TEMPLATES: ActionTemplate[] = [
     description: 'Undelegate tokens from a validator',
     icon: ArrowRightLeft,
     category: ActionCategory.GOVERNANCE,
-    defaultData: {
-      stargate: {
-        typeUrl: '/cosmos.staking.v1beta1.MsgUndelegate',
-        value: {
-          delegatorAddress: '',
-          validatorAddress: '',
-          amount: {
-            denom: 'uluna',
-            amount: '0',
-          },
-        },
+    defaultData: createStargateTemplate('/cosmos.staking.v1beta1.MsgUndelegate', {
+      delegatorAddress: '',
+      validatorAddress: '',
+      amount: {
+        denom: 'uluna',
+        amount: '0',
       },
-    },
+    }),
   },
   {
     id: 'gov_vote',

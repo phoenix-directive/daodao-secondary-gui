@@ -1,5 +1,6 @@
 import { Chain } from '@/hooks/helpers/assets';
 import { getAssetInfoOld, isCw20 } from '@/hooks/helpers/helpers';
+import { orderBy } from 'lodash-es';
 import { CacheService } from './CacheService';
 import { ChainInfo } from './ChainService';
 import { PairResponse } from './read.model';
@@ -46,8 +47,54 @@ export class ReadService {
     );
   }
 
+  validatorsCached() {
+    return this.cache.getCached(`validators_${this.chain}`, 24 * 60, async () => {
+      const queryClient = await this.clients.queryClient;
+
+      // Paginate through all validators
+      const allValidators: Awaited<
+        ReturnType<typeof queryClient.staking.validators>
+      >['validators'][number][] = [];
+      let paginationKey: Uint8Array | undefined = undefined;
+
+      do {
+        const res = await queryClient.staking.validators(
+          'BOND_STATUS_BONDED' as any,
+          paginationKey,
+        );
+        allValidators.push(...res.validators);
+        paginationKey = res.pagination?.nextKey?.length ? res.pagination.nextKey : undefined;
+      } while (paginationKey);
+
+      return orderBy(
+        allValidators.map((a) => {
+          return {
+            address: a.operatorAddress,
+            moniker: a.description.moniker ?? a.operatorAddress,
+            commission: +a.commission.commissionRates.rate / 1e16,
+            status: a.status,
+            jailed: a.jailed,
+            logo: a.description.identity,
+          };
+        }),
+        (a) => a.moniker,
+        'asc',
+      );
+    });
+  }
+
   balances(address: string) {
     return this.clients.queryClient.bank.allBalances(address);
+  }
+
+  async delegations(address: string) {
+    const queryClient = await this.clients.queryClient;
+    const result = await queryClient.staking.delegatorDelegations(address);
+    return result.delegationResponses.map((d) => ({
+      validatorAddress: d.delegation.validatorAddress,
+      amount: d.balance.amount,
+      denom: d.balance.denom,
+    }));
   }
 
   balance(address: string, denom: string) {

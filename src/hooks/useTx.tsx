@@ -11,6 +11,7 @@ import {
   tryGetJsonObjectEnd,
 } from '@/hooks/helpers/helpers';
 import { growlTx } from '@/hooks/helpers/tx-tracer';
+import { useWhyDidYouUpdate } from '@/hooks/useWhyDidYouUpdate';
 import { IndexedTx } from '@cosmjs/stargate';
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -100,6 +101,8 @@ export interface TxResult {
 }
 
 export function useTx<T>(messages: TransactionMsg[], options: UseTxOptions<T>) {
+  useWhyDidYouUpdate('useTx', options);
+
   const shuttle = useShuttle();
   const [retry, setRetry] = useState(0);
   const [simulation, setSimulation] = useState<SimulateResult>({

@@ -35,6 +35,7 @@ import {
   saveDraft,
 } from '@/lib/proposal-drafts';
 import { ProposalFormProvider } from '@/lib/proposal-form-context';
+import { cloneDeep } from 'lodash';
 import { ArrowLeft, Eye, FileText, Library, Loader2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -524,13 +525,28 @@ export function ProposalCreatePage() {
   const creationPolicy = useProposalCreationPolicy(proposalModuleAddress);
   const preProposalModuleAddress = creationPolicy.data.value?.module?.addr;
 
+  // Helper function to recursively strip _decoded properties from messages
+  const stripDecoded = (obj: any): any => {
+    if (!obj || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(stripDecoded);
+
+    const result: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === '_decoded') continue;
+      result[key] = stripDecoded(value);
+    }
+    return result;
+  };
+
   // Extract core messages (the actual actions to execute)
   const coreMessages = useMemo(() => {
     if (draft.proposalType === 'single') {
-      return draft.actions.map((a) => a.data);
+      return draft.actions.map((a) => stripDecoded(cloneDeep(a.data)));
     }
     // For multiple choice, return array of message arrays
-    return draft.choices.map((choice) => choice.actions.map((a) => a.data as UnifiedCosmosMsg));
+    return draft.choices.map((choice) =>
+      choice.actions.map((a) => stripDecoded(cloneDeep(a.data)) as UnifiedCosmosMsg),
+    );
   }, [draft.proposalType, draft.actions, draft.choices]);
 
   // Memoize the choices array for multiple choice proposals to prevent unnecessary re-renders
@@ -627,10 +643,12 @@ export function ProposalCreatePage() {
   //   console.log('🔄 Render triggered - searchParams changed', searchParams.toString());
   // }, [searchParams]);
 
+  // console.log('info', isProposalValid, areActionsValid, coreMessagesSimulation);
+
   const publishProposal = useTx(proposalMessages, {
     title: 'Publish Proposal',
     chainId: Chain.Terra,
-    valid: isProposalValid && areActionsValid,
+    valid: isProposalValid, // && areActionsValid,
     debounceTime: 500,
     onTxSuccess: () => {
       toast.success('Proposal published successfully!');
