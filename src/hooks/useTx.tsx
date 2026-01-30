@@ -400,7 +400,7 @@ export function getMemo(wallet: WalletConnection): string | null | undefined {
   if (wallet.account.isLedger || wallet.mobileSession.walletConnectSession) {
     return undefined;
   }
-  return 'creda.finance';
+  return 'phoenix.money';
 }
 
 function getWalletByChainId(chainId: Chain, wallets: WalletConnection[]) {
