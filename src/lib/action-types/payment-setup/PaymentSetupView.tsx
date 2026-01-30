@@ -101,7 +101,11 @@ export function PaymentSetupView({ data }: { data: PaymentSetupMsg }) {
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
-                  <span>Claimable after {formatDate(payment.claimable_after_s)}</span>
+                  <span>
+                    {payment.claimable_after_s
+                      ? `Claimable after ${formatDate(payment.claimable_after_s)}`
+                      : 'Immediately claimable'}
+                  </span>
                 </div>
               </div>
             ))}
