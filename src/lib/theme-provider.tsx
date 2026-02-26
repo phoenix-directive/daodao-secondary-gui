@@ -1,5 +1,5 @@
 import { useLocalStorage } from '@/hooks';
-import { createContext, useEffect } from 'react';
+import { createContext, useEffect, useMemo, useState } from 'react';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -33,6 +33,20 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useLocalStorage<Theme>(storageKey, defaultTheme);
+  const [systemTheme, setSystemTheme] = useState<'dark' | 'light'>(() =>
+    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+  );
+
+  // Listen for system theme changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      setSystemTheme(e.matches ? 'dark' : 'light');
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -40,20 +54,23 @@ export function ThemeProvider({
     root.classList.remove('light', 'dark');
 
     if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
-
       root.classList.add(systemTheme);
     } else {
       root.classList.add(theme);
     }
-  }, [theme]);
+  }, [theme, systemTheme]);
+
+  const isDark = useMemo(() => {
+    if (theme === 'system') {
+      return systemTheme === 'dark';
+    }
+    return theme === 'dark';
+  }, [theme, systemTheme]);
 
   const value = {
     theme,
     setTheme,
-    isDark: theme === 'dark',
+    isDark,
     setIsDark: (isDark: boolean) => setTheme(isDark ? 'dark' : 'light'),
   };
 
