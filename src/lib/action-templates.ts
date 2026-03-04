@@ -6,6 +6,7 @@ import {
   Coins as CoinsIcon,
   ExternalLink,
   FileText,
+  Flame,
   LucideIcon,
   Send,
   Settings,
@@ -57,6 +58,26 @@ const BASE_ACTION_TEMPLATES: ActionTemplate[] = [
       bank: {
         send: {
           to_address: '',
+          amount: [
+            {
+              denom: 'uluna',
+              amount: '0',
+            },
+          ],
+        },
+      },
+    },
+  },
+  {
+    id: 'bank_burn',
+    name: 'Burn Tokens',
+    title: 'Burn Tokens',
+    description: 'Burn native tokens from the treasury',
+    icon: Flame,
+    category: ActionCategory.TREASURY,
+    defaultData: {
+      bank: {
+        burn: {
           amount: [
             {
               denom: 'uluna',

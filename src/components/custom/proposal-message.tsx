@@ -141,7 +141,7 @@ export function ProposalMessage({
                 <X className="h-4 w-4" />
               </Button>
             )}
-            {messageType.expandable && (
+            {messageType.expandable && actionType?.ViewComponent && (
               <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                 <span className="text-sm text-muted-foreground">Show Raw</span>
                 <Switch

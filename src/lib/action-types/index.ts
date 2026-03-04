@@ -4,6 +4,7 @@
  */
 
 import { actionRegistry } from '../action-registry';
+import { BankBurnActionType } from './bank-burn/BankBurnAction';
 import { BankSendActionType } from './bank-send/BankSendAction';
 import { CW20SendActionType } from './cw20-send/CW20SendAction';
 import { CW20TransferActionType } from './cw20-transfer/CW20TransferAction';
@@ -24,6 +25,7 @@ actionRegistry.registerAll([
 
   // Specific message types
   BankSendActionType,
+  BankBurnActionType,
   StakingDelegateActionType,
   StakingUndelegateActionType,
   GovVoteActionType,
@@ -39,6 +41,7 @@ actionRegistry.registerAll([
 
 // Export all action types for direct access if needed
 export {
+  BankBurnActionType,
   BankSendActionType,
   CW20SendActionType,
   CW20TransferActionType,

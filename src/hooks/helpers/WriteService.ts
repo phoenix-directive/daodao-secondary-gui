@@ -1,3 +1,4 @@
+import { EncodeObject } from '@cosmjs/proto-signing';
 import { cwMsgToEncodeObject, getTypesRegistry } from '@/daodao/protobuf';
 import { createRPCQueryClient } from '@/daodao/protobuf/codegen/cosmos/rpc.query';
 import { SignMode } from '@/daodao/protobuf/codegen/cosmos/tx/signing/v1beta1/signing';
@@ -109,10 +110,13 @@ export class WriteService {
       const cosmosRpcClient = await createRPCQueryClient({ rpcEndpoint });
 
       const typesRegistry = getTypesRegistry();
-      const encodedMsgs = msgs.map((msg) => {
-        const encoded = cwMsgToEncodeObject(chainId, msg, senderAddress);
-        return typesRegistry.encodeAsAny(encoded);
-      });
+      const encodedMsgs = msgs
+        .map((msg) => cwMsgToEncodeObject(chainId, msg, senderAddress))
+        .filter((encoded): encoded is EncodeObject => encoded !== null)
+        .map((encoded) => typesRegistry.encodeAsAny(encoded));
+
+      // If all messages were filtered out (e.g. all burns), skip simulation
+      if (encodedMsgs.length === 0) return;
 
       const tx = Tx.fromPartial({
         authInfo: AuthInfo.fromPartial({
@@ -140,6 +144,7 @@ export class WriteService {
 
       await cosmosRpcClient.cosmos.tx.v1beta1.simulate(request);
     } catch (error: any) {
+      console.log('🚀 ~ WriteService ~ simulateMessages ~ error:', error);
       const message = getErrorMessageSync(error.message || error);
       throw new ExtendedError(message, 'Error during simulation');
     }

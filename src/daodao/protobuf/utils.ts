@@ -113,7 +113,11 @@ export const cwMsgToProtobuf = (...params: Parameters<typeof cwMsgToEncodeObject
     };
   }
 
-  const { typeUrl, value } = cwMsgToEncodeObject(...params);
+  const result = cwMsgToEncodeObject(...params);
+  if (!result) {
+    throw new Error('Message type cannot be encoded to protobuf (e.g. BankMsg::Burn is CosmWasm-only).');
+  }
+  const { typeUrl, value } = result;
   return {
     typeUrl,
     value: encodeProtobufValue(typeUrl, value),
@@ -133,7 +137,7 @@ export const cwMsgToEncodeObject = (
   chainId: string,
   msg: UnifiedCosmosMsg,
   sender: string,
-): EncodeObject => {
+): EncodeObject | null => {
   if ('bank' in msg) {
     const bankMsg = msg.bank;
 
@@ -150,7 +154,11 @@ export const cwMsgToEncodeObject = (
       return encodeObject;
     }
 
-    // burn does not exist?
+    if ('burn' in bankMsg) {
+      // BankMsg::Burn is a CosmWasm-native message handled by the wasmd runtime.
+      // There is no corresponding Cosmos SDK protobuf type, so it cannot be simulated.
+      return null;
+    }
 
     throw new Error('Unsupported bank module message.');
   }
