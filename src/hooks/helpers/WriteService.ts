@@ -1,4 +1,3 @@
-import { EncodeObject } from '@cosmjs/proto-signing';
 import { cwMsgToEncodeObject, getTypesRegistry } from '@/daodao/protobuf';
 import { createRPCQueryClient } from '@/daodao/protobuf/codegen/cosmos/rpc.query';
 import { SignMode } from '@/daodao/protobuf/codegen/cosmos/tx/signing/v1beta1/signing';
@@ -21,6 +20,7 @@ import {
 import { ExtendedError, getErrorMessageSync, getWallet, toArray } from '@/hooks/helpers/helpers';
 import { encodeSecp256k1Pubkey } from '@cosmjs/amino';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
+import { EncodeObject } from '@cosmjs/proto-signing';
 import { calculateFee, Coin, GasPrice, QueryClient, TxExtension } from '@cosmjs/stargate';
 import { Chain } from './assets';
 import { ChainEventsReader } from './events.reader';

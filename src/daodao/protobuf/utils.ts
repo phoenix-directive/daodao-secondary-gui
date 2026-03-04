@@ -115,7 +115,9 @@ export const cwMsgToProtobuf = (...params: Parameters<typeof cwMsgToEncodeObject
 
   const result = cwMsgToEncodeObject(...params);
   if (!result) {
-    throw new Error('Message type cannot be encoded to protobuf (e.g. BankMsg::Burn is CosmWasm-only).');
+    throw new Error(
+      'Message type cannot be encoded to protobuf (e.g. BankMsg::Burn is CosmWasm-only).',
+    );
   }
   const { typeUrl, value } = result;
   return {
