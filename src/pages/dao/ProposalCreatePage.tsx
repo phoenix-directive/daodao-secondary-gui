@@ -86,6 +86,23 @@ const PublishActions = memo(function PublishActions({
   setActiveTab: (tab: 'edit' | 'preview') => void;
   coreMessagesSimulation: ReturnType<typeof useProposalActionsSimulation>;
 }) {
+  const [ctrlHeld, setCtrlHeld] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Control') setCtrlHeld(true);
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Control') setCtrlHeld(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
+
   // Collect all errors
   const errors: string[] = [];
 
@@ -112,6 +129,9 @@ const PublishActions = memo(function PublishActions({
     );
   }
 
+  const hasSimulationErrors = !coreMessagesSimulation.success && !coreMessagesSimulation.loading;
+  const showForcePublish = ctrlHeld && hasSimulationErrors;
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -136,6 +156,23 @@ const PublishActions = memo(function PublishActions({
               </>
             )}
           </Button>
+          {showForcePublish && (
+            <Button
+              onClick={handlePublish}
+              disabled={publishProposal.buttonProps.disabled || publishProposal.result.loading}
+              variant="destructive"
+              className="gap-2"
+            >
+              {publishProposal.result.loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Publishing...
+                </>
+              ) : (
+                'Force Publish'
+              )}
+            </Button>
+          )}
           <Button
             onClick={handlePublish}
             disabled={
