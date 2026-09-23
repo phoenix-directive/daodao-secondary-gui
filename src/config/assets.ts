@@ -65,8 +65,16 @@ export const ASSET_META: Record<string, AssetMeta> = {
   'ibc/2C962DAB9F57FE0921435426AE75196009FAA1981BF86991203C8411F8980FDB': {
     denom: 'ibc/2C962DAB9F57FE0921435426AE75196009FAA1981BF86991203C8411F8980FDB',
     icon: 'https://raw.githubusercontent.com/cosmos/chain-registry/master/_non-cosmos/ethereum/images/usdc.svg',
-    symbol: 'USDC',
-    display: 'USDC',
+    symbol: 'USDC.n',
+    display: 'USDC.n',
+    decimals: 6,
+    category: AssetCategory.STABLECOIN,
+  },
+  'ibc/E8481AD838C31D4FC12A504B10F9B4E2F830F8818D2735C2FFC707579B5FA60B': {
+    denom: 'ibc/E8481AD838C31D4FC12A504B10F9B4E2F830F8818D2735C2FFC707579B5FA60B',
+    icon: 'https://raw.githubusercontent.com/cosmos/chain-registry/master/_non-cosmos/ethereum/images/usdc.svg',
+    symbol: 'USDC.inj',
+    display: 'USDC.inj',
     decimals: 6,
     category: AssetCategory.STABLECOIN,
   },
@@ -119,7 +127,7 @@ export const ASSET_META: Record<string, AssetMeta> = {
     icon: 'https://raw.githubusercontent.com/cosmos/chain-registry/master/_non-cosmos/ethereum/images/usdc.svg',
     icon2:
       'https://raw.githubusercontent.com/cosmos/chain-registry/master/_non-cosmos/ethereum/images/usdt.svg',
-    symbol: 'USDC-USDT',
+    symbol: 'USDC.n-USDT',
     display: 'Amplified LP',
     decimals: 6,
     category: AssetCategory.LP,
