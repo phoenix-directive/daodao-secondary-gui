@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorDisplay } from '@/components/ui/error-display';
 import {
   Config,
   ProposalResponse,
@@ -224,6 +225,13 @@ export function ProposalMembership({
   const isTxDisabled = (tx: typeof voteYesTx) => isProcessing || tx.buttonProps.disabled;
   const isTxSimulating = (tx: typeof voteYesTx) => !!tx.simulation.loading;
 
+  // The vote options usually fail for the same reason, so show each error once
+  const voteErrors = [
+    ...new Set(
+      [voteYesTx, voteNoTx, voteAbstainTx].flatMap((tx) => tx.buttonProps.errors ?? []),
+    ),
+  ];
+
   return (
     <Card>
       <CardHeader>
@@ -315,6 +323,9 @@ export function ProposalMembership({
                 )}
               </Button>
             </div>
+            <div className="mt-2">
+              <ErrorDisplay errors={voteErrors} title="Cannot vote" />
+            </div>
             {hasVoted && canRevote && (
               <p className="text-xs text-muted-foreground mt-2">Revoting is enabled</p>
             )}
@@ -345,6 +356,9 @@ export function ProposalMembership({
                 'Execute Proposal'
               )}
             </Button>
+            <div className="mt-2">
+              <ErrorDisplay errors={executeTx.buttonProps.errors} title="Cannot execute" />
+            </div>
           </div>
         )}
 
