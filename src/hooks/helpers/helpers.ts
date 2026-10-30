@@ -108,17 +108,15 @@ function prepareMessage(
 }
 
 function replaceEnd(error: string) {
-  const endRemovals = [
+  const endRemovals: (string | RegExp)[] = [
     ': execute wasm contract failed',
-    '[cosmos/cosmos-sdk@v0.47.15/x/bank/keeper/send.go:252]',
-    '[cosmos/cosmos-sdk@v0.50.11/x/bank/keeper/send.go:',
-    '[CosmWasm/wasmd@v0.53.0/x/wasm/types/tx.go:128]',
-    '[CosmWasm/wasmd@v0.53.2/x/wasm/types/tx.go:128]',
-    '[CosmWasm/wasmd@v0.54.1/x/wasm/types/tx.go:125]',
+    // Go source locations, e.g. [CosmWasm/wasmd@v0.54.10/x/wasm/keeper/keeper.go:494]
+    /\s*\[(cosmos\/cosmos-sdk|CosmWasm\/wasmd)@v[^/\]]+\/[^\]]*\.go:/,
     ': query wasm contract failed: unknown request',
   ];
   for (const removal of endRemovals) {
-    const index = error.indexOf(removal);
+    const index =
+      typeof removal === 'string' ? error.indexOf(removal) : error.search(removal);
     if (index >= 0) {
       error = error.substring(0, index);
     }

@@ -417,35 +417,35 @@
 /* Markdown Editor Styles */
 .w-md-editor {
   border-radius: 0.5rem;
-  border: 1px solid hsl(var(--border));
-  background-color: hsl(var(--background));
+  border: 1px solid var(--border);
+  background-color: var(--background);
 }
 
 .w-md-editor-toolbar {
-  background-color: hsl(var(--muted) / 0.3);
-  border-bottom: 1px solid hsl(var(--border));
+  background-color: color-mix(in oklch, var(--muted) 30%, transparent);
+  border-bottom: 1px solid var(--border);
   padding: 0.5rem;
 }
 
 .w-md-editor-toolbar button {
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .w-md-editor-toolbar button:hover {
-  background-color: hsl(var(--accent) / 0.1);
+  background-color: color-mix(in oklch, var(--accent) 10%, transparent);
 }
 
 .w-md-editor-text,
 .w-md-editor-text-pre {
-  color: hsl(var(--foreground)) !important;
-  background-color: hsl(var(--background)) !important;
+  color: var(--foreground) !important;
+  background-color: var(--background) !important;
 }
 
 .w-md-editor-text::placeholder {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 .w-md-editor-text-pre > code {
-  color: hsl(var(--foreground)) !important;
+  color: var(--foreground) !important;
   background-color: transparent !important;
 }

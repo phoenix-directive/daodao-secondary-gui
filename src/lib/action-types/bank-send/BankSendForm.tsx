@@ -73,7 +73,7 @@ export function BankSendForm({
         <Input
           value={sendData.to_address || ''}
           onChange={(e) => onUpdate(['bank', 'send', 'to_address'], e.target.value)}
-          placeholder="cosmos1..."
+          placeholder="terra1..."
         />
       </div>
       <div className="space-y-2">

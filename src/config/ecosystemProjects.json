@@ -444,7 +444,7 @@
     {
         "name": "Votion",
         "type": "DeFi",
-        "description": "Cosmos' Most Advanced Vote Aggregator. Votion revolutionizes governance participation for Cosmos token holders by automating the voting process through a decentralized, efficient, and capital-optimized aggregator. Users deposit their tokens, receive a tradable receipt token, and have their votes seamlessly managed—maximizing governance efficiency without manual intervention.",
+        "description": "A vote aggregator that automates governance voting. Deposit tokens and receive a tradable receipt token.",
         "status": "open",
         "thumbnail": "votion",
         "link": "https://votion.money/liquidity-alliance",

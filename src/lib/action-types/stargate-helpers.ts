@@ -97,7 +97,7 @@ export function getStargateValue<T>(action: StargateActionWithDecoded<T>): T {
  * @param updates - Object with fields to update in the decoded value
  *
  * @example
- * updateStargateValue(data, onUpdate, { validatorAddress: 'cosmos1...' })
+ * updateStargateValue(data, onUpdate, { validatorAddress: 'terra1...' })
  * updateStargateValue(data, onUpdate, { amount: { denom: 'uluna', amount: '1000000' } })
  */
 export function updateStargateValue<T extends Record<string, any>>(

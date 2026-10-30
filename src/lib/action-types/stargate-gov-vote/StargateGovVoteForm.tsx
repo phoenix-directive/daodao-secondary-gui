@@ -19,7 +19,7 @@ export function StargateGovVoteForm({
         <Input
           value={value.voter || ''}
           onChange={(e) => onUpdate(['stargate', 'value', 'voter'], e.target.value)}
-          placeholder="cosmos1..."
+          placeholder="terra1..."
         />
       </div>
       <div className="space-y-2">

@@ -18,7 +18,7 @@ export function WasmUpdateAdminForm({
         <Input
           value={updateAdminData.contract_addr || ''}
           onChange={(e) => onUpdate(['wasm', 'update_admin', 'contract_addr'], e.target.value)}
-          placeholder="cosmos1..."
+          placeholder="terra1..."
         />
       </div>
       <div className="space-y-2">
@@ -26,7 +26,7 @@ export function WasmUpdateAdminForm({
         <Input
           value={updateAdminData.admin || ''}
           onChange={(e) => onUpdate(['wasm', 'update_admin', 'admin'], e.target.value)}
-          placeholder="cosmos1..."
+          placeholder="terra1..."
         />
       </div>
     </div>

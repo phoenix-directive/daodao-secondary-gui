@@ -220,6 +220,10 @@ export function ProposalMembership({
     return vote.charAt(0).toUpperCase() + vote.slice(1);
   };
 
+  // Disable until this tx's gas estimation has succeeded, otherwise broadcast() rejects it
+  const isTxDisabled = (tx: typeof voteYesTx) => isProcessing || tx.buttonProps.disabled;
+  const isTxSimulating = (tx: typeof voteYesTx) => !!tx.simulation.loading;
+
   return (
     <Card>
       <CardHeader>
@@ -262,9 +266,13 @@ export function ProposalMembership({
                     setIsProcessing(false);
                   }
                 }}
-                disabled={isProcessing}
+                disabled={isTxDisabled(voteYesTx)}
               >
-                {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Yes'}
+                {isProcessing || isTxSimulating(voteYesTx) ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Yes'
+                )}
               </Button>
               <Button
                 size="sm"
@@ -278,9 +286,13 @@ export function ProposalMembership({
                     setIsProcessing(false);
                   }
                 }}
-                disabled={isProcessing}
+                disabled={isTxDisabled(voteNoTx)}
               >
-                {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'No'}
+                {isProcessing || isTxSimulating(voteNoTx) ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'No'
+                )}
               </Button>
               <Button
                 size="sm"
@@ -294,9 +306,13 @@ export function ProposalMembership({
                     setIsProcessing(false);
                   }
                 }}
-                disabled={isProcessing}
+                disabled={isTxDisabled(voteAbstainTx)}
               >
-                {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Abstain'}
+                {isProcessing || isTxSimulating(voteAbstainTx) ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Abstain'
+                )}
               </Button>
             </div>
             {hasVoted && canRevote && (
@@ -318,9 +334,9 @@ export function ProposalMembership({
                   setIsProcessing(false);
                 }
               }}
-              disabled={isProcessing}
+              disabled={isTxDisabled(executeTx)}
             >
-              {isProcessing ? (
+              {isProcessing || isTxSimulating(executeTx) ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Executing...

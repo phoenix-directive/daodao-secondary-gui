@@ -14,6 +14,7 @@ import { StakingDelegateActionType } from './staking-delegate/StakingDelegateAct
 import { StakingUndelegateActionType } from './staking-undelegate/StakingUndelegateAction';
 import { StargateGovVoteActionType } from './stargate-gov-vote/StargateGovVoteAction';
 import { WasmExecuteActionType } from './wasm-execute/WasmExecuteAction';
+import { WasmMigrateActionType } from './wasm-migrate/WasmMigrateAction';
 import { WasmUpdateAdminActionType } from './wasm-update-admin/WasmUpdateAdminAction';
 
 // Register all action types
@@ -31,6 +32,7 @@ actionRegistry.registerAll([
   GovVoteActionType,
   StargateGovVoteActionType,
   WasmUpdateAdminActionType,
+  WasmMigrateActionType,
 
   // Payment setup must come before generic Wasm Execute
   PaymentSetupActionType,
@@ -51,6 +53,7 @@ export {
   StakingUndelegateActionType,
   StargateGovVoteActionType,
   WasmExecuteActionType,
+  WasmMigrateActionType,
   WasmUpdateAdminActionType,
 };
 

@@ -2,6 +2,7 @@ import ecosystemProjects from '@/config/ecosystemProjects.json';
 import { encodeProtobufValue } from '@/daodao/protobuf/utils';
 import {
   ArrowRightLeft,
+  ArrowUpCircle,
   Coins,
   Coins as CoinsIcon,
   ExternalLink,
@@ -214,6 +215,23 @@ const BASE_ACTION_TEMPLATES: ActionTemplate[] = [
         update_admin: {
           contract_addr: '',
           admin: '',
+        },
+      },
+    },
+  },
+  {
+    id: 'wasm_migrate',
+    name: 'Migrate Contract',
+    title: 'Migrate Contract',
+    description: 'Migrate a contract to a new code ID',
+    icon: ArrowUpCircle,
+    category: ActionCategory.GOVERNANCE,
+    defaultData: {
+      wasm: {
+        migrate: {
+          contract_addr: '',
+          new_code_id: 0,
+          msg: {},
         },
       },
     },

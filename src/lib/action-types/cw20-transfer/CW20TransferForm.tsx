@@ -241,7 +241,7 @@ export function CW20TransferForm({
         <Input
           value={decodedMsg.transfer.recipient || ''}
           onChange={(e) => updateRecipient(e.target.value)}
-          placeholder="cosmos1..."
+          placeholder="terra1..."
         />
       </div>
     </div>

@@ -9,7 +9,7 @@ interface MarkdownEditorProps {
 }
 
 export function MarkdownEditor({ value, onChange, placeholder }: MarkdownEditorProps) {
-  const { theme } = useTheme();
+  const { isDark } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export function MarkdownEditor({ value, onChange, placeholder }: MarkdownEditorP
   }, []);
 
   return (
-    <div ref={containerRef} data-color-mode={theme === 'dark' ? 'dark' : 'light'}>
+    <div ref={containerRef} data-color-mode={isDark ? 'dark' : 'light'}>
       <MDEditor
         value={value}
         onChange={(val) => onChange(val || '')}
